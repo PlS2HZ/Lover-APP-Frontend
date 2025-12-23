@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* ถ้าข้างบนยังไม่ติด ให้เพิ่มบรรทัดล่างนี้เพื่อความชัวร์สำหรับ v4 */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
