@@ -3,19 +3,16 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Home, Calendar, Send, History, LogOut, 
-  ChevronLeft, ChevronRight, Heart, Gift, 
-  Image as ImageIcon, Menu, X, User as UserIcon,
-  Gamepad2
+  Heart, Gift, Image as ImageIcon, Menu, X, 
+  User as UserIcon, Gamepad2
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentTheme, nextTheme, prevTheme } = useTheme();
+  const { currentTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // ✅ ลบ State pendingInvites และฟังก์ชัน checkInvites ออกทั้งหมด
   
   const userId = localStorage.getItem('user_id');
   const ALLOWED_IDS = ["d8eb372a-d196-44fc-a73b-1809f27e0a56", "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e"];
@@ -46,6 +43,7 @@ const Navbar = () => {
   }, [location, userId, API_URL]);
 
   const handleLogout = () => {
+    // ✅ เพิ่มการถามซ้ำก่อนออกจากระบบเพื่อป้องกันการเผลอกด
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
       localStorage.clear();
       navigate("/login");
@@ -53,11 +51,7 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { 
-      name: 'Mind Game', 
-      path: '/mind-game',
-      icon: <Gamepad2 size={20} className="text-purple-500" /> 
-    },
+    { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
     { name: 'Moments', path: '/moments', icon: <ImageIcon size={20} className="text-sky-500" /> },
@@ -90,19 +84,30 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* ✅ ลบจุดแดงแจ้งเตือนที่ปุ่ม Home ออก */}
             <Link to="/" className={`relative p-2 rounded-xl transition-all ${location.pathname === '/' ? activeColor : 'text-slate-300 hover:text-rose-400'}`}>
               <Home size={22} />
             </Link>
 
             {userData.username && (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
-                <Link to="/profile" className="hidden sm:block">
-                    <img 
-                        src={userData.avatarUrl && userData.avatarUrl !== 'null' ? userData.avatarUrl : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
-                        alt="Avatar"
-                    />
+                {/* ✅ ปุ่ม Logout แบบไอคอน วางไว้ข้างโปรไฟล์ */}
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
+                  title="ออกจากระบบ"
+                >
+                  <LogOut size={20} />
+                </button>
+
+                <Link to="/profile" className="flex items-center gap-2 group">
+                    <div className="relative">
+                        <img 
+                            src={userData.avatarUrl && userData.avatarUrl !== 'null' ? userData.avatarUrl : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
+                            className="w-9 h-9 rounded-full border-2 border-white shadow-md object-cover group-hover:border-rose-400 transition-all"
+                            alt="Avatar"
+                        />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
                 </Link>
                 
                 <button 
@@ -110,7 +115,6 @@ const Navbar = () => {
                   className={`relative p-2 rounded-xl transition-all ${isMenuOpen ? 'bg-rose-500 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
                 >
                   {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
-                  {/* ✅ ลบจุดแจ้งเตือนตัวเลขที่ปุ่ม Menu ออก */}
                 </button>
               </div>
             )}
@@ -120,6 +124,18 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="absolute top-full right-0 w-full sm:w-72 bg-white border-b sm:border-l border-rose-100 shadow-2xl animate-in slide-in-from-top sm:slide-in-from-right duration-200 max-h-[85vh] overflow-y-auto custom-scrollbar">
             <div className="p-3 flex flex-col gap-1">
+              <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl mb-2 hover:bg-rose-50 transition-all border border-slate-100">
+                  <img 
+                      src={userData.avatarUrl && userData.avatarUrl !== 'null' ? userData.avatarUrl : `https://ui-avatars.com/api/?name=${userData.username}&background=random`} 
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover"
+                      alt="Avatar"
+                  />
+                  <div>
+                      <p className="text-xs font-black text-slate-700 uppercase italic leading-none">{userData.username}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">ดูโปรไฟล์ของคุณ</p>
+                  </div>
+              </Link>
+
               <div className="px-3 py-1.5 mb-1 border-b border-slate-50">
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
               </div>
@@ -133,9 +149,8 @@ const Navbar = () => {
                     location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
                   }`}
                 >
-                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors relative">
+                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
                     {React.cloneElement(item.icon, { size: 18 })}
-                    {/* ✅ ลบจุดแจ้งเตือนภายในรายการเมนูออกทั้งหมด */}
                   </span>
                   {item.name}
                 </Link>
@@ -166,13 +181,6 @@ const Navbar = () => {
           </div>
         )}
       </nav>
-
-      {/* <div className="fixed bottom-6 left-6 z-[999]">
-        <button onClick={prevTheme} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border border-rose-100 text-rose-500 active:scale-90 transition-all"><ChevronLeft size={20} /></button>
-      </div>
-      <div className="fixed bottom-6 right-6 z-[999]">
-        <button onClick={nextTheme} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg border border-rose-100 text-rose-500 active:scale-90 transition-all"><ChevronRight size={20} /></button>
-      </div> */}
     </>
   );
 };
