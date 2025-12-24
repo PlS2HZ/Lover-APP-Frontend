@@ -15,6 +15,7 @@ import HomeAdminPage from './pages/HomeAdminPage';
 import MindGame from './pages/MindGame';
 import GameSession from './pages/GameSession';
 import CreateLevel from './pages/CreateLevel';
+import BotGameSession from './pages/BotGameSession';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -128,6 +129,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/bot-game-session/:id"
+  element={
+    <ProtectedRoute>
+      <BotGameSession user={user} />
+    </ProtectedRoute>
+  }
+/>
         </Routes>
       </Router>
     </ThemeProvider>

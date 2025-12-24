@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Heart, ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { Heart, ArrowLeft, Save, Sparkles, Trash2 } from 'lucide-react';
 
 const CreateLevel = () => {
     const [secretWord, setSecretWord] = useState("");
@@ -14,8 +14,15 @@ const CreateLevel = () => {
     const API_URL = window.location.hostname.includes('localhost') 
         ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
 
+    // ✅ ฟังก์ชันเรียก AI: เพิ่มระบบตรวจสอบข้อความเดิมก่อนทำงานเพื่อประหยัดโควต้า
     const generateAIDesc = async () => {
         if (!secretWord) return alert("ใส่คำลับก่อนนะ เดี๋ยว AI ช่วยเขียนให้!");
+        
+        // 🛡️ ระบบป้องกันโควต้า: ถ้ามีข้อความอยู่แล้ว จะแจ้งเตือนให้ลบก่อน (ยังไม่เสีย Request)
+        if (description.trim() !== "") {
+            return alert("มีคำอธิบายอยู่แล้ว! กรุณากดปุ่ม 'ล้างข้อมูล' ก่อนเพื่อป้องกันการใช้โควต้า AI ซ้ำซ้อนครับ");
+        }
+
         setIsAiGenerating(true);
         try {
             const res = await fetch(`${API_URL}/api/game/generate-description`, {
@@ -59,12 +66,17 @@ const CreateLevel = () => {
                 <h1 className="text-2xl font-black italic uppercase text-slate-800 mb-1">สร้างโจทย์ใหม่</h1>
                 <p className="text-[10px] font-bold text-slate-400 uppercase italic mb-8 tracking-wider">อะไรอยู่ในใจฉ้านนน?</p>
 
-                {/* ✅ ส่วนที่ 1: แก้ไข UI ย้ายปุ่ม AI ออกมาไว้ด้านบนเพื่อป้องกันตัวหนังสือทับ */}
                 <div className="text-left space-y-2 mb-8">
                     <div className="flex justify-between items-center px-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">1. ระบุคำลับของคุณ</label>
-                        <button onClick={generateAIDesc} disabled={isAiGenerating || !secretWord} className="bg-purple-500 text-white p-2 px-3 rounded-lg flex items-center gap-1.5 text-[9px] font-black uppercase hover:bg-purple-600 transition-all disabled:opacity-30">
-                            {isAiGenerating ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <Sparkles size={14}/>} AI HELP
+                        {/* ✅ ปุ่ม AI Help พร้อมระบบตรวจสอบ */}
+                        <button 
+                            onClick={generateAIDesc} 
+                            disabled={isAiGenerating || !secretWord} 
+                            className="bg-purple-500 text-white p-2 px-3 rounded-lg flex items-center gap-1.5 text-[9px] font-black uppercase hover:bg-purple-600 transition-all disabled:opacity-30 shadow-lg shadow-purple-100"
+                        >
+                            {isAiGenerating ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <Sparkles size={14}/>} 
+                            AI HELP
                         </button>
                     </div>
                     <input 
@@ -77,7 +89,16 @@ const CreateLevel = () => {
                 </div>
 
                 <div className="text-left space-y-2 mb-8">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1">2. คำอธิบาย (สำหรับบอท)</label>
+                    <div className="flex justify-between items-center px-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1">2. คำอธิบาย (สำหรับบอท)</label>
+                        {/* ✅ ปุ่มล้างข้อมูล: ล้าง State ฝั่ง Frontend โดยไม่เรียก API (ประหยัดโควต้า 100%) */}
+                        <button 
+                            onClick={() => setDescription("")}
+                            className="flex items-center gap-1 text-[9px] font-black text-rose-400 hover:text-rose-600 uppercase transition-colors"
+                        >
+                            <Trash2 size={12} /> ล้างข้อมูล
+                        </button>
+                    </div>
                     <textarea 
                         className={`w-full p-4 rounded-2xl border-2 transition-all min-h-[120px] font-bold text-sm focus:outline-none shadow-inner ${isAiGenerating ? 'border-purple-200 bg-purple-50/30' : 'border-slate-100 focus:border-pink-500 bg-slate-50/50'}`}
                         placeholder="AI จะช่วยอธิบายลักษณะคำลับให้ที่นี่..."

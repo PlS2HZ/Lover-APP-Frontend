@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { 
-  PlusCircle, Gamepad2, Lock, Play, Trophy, Clock, Trash2 
+  PlusCircle, Gamepad2, Lock, Play, Trophy, Clock, Trash2 , Sparkles  
 } from 'lucide-react';
 
 const MindGame = () => {
@@ -77,6 +77,28 @@ const MindGame = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleBotAutoCreate = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(`${API_URL}/api/game/bot-auto-create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guesser_id: userId })
+    });
+    const session = await res.json();
+    if (res.ok && session.id) {
+      navigate(`/bot-game-session/${session.id}`);
+    } else {
+      alert("บอทงอแง สุ่มคำให้ไม่ได้ ลองกดใหม่นะ!");
+    }
+  } catch (err) {
+    console.error("Bot auto-create error:", err);
+    alert("เชื่อมต่อ Server ไม่สำเร็จ");
+  } finally {
+    setLoading(false);
+  }
+};
+
   return (
     <div className="min-h-screen bg-[#fffdfd] pb-20">
       <div className="bg-white border-b border-rose-100 p-6 sticky top-0 z-50 backdrop-blur-md bg-white/90">
@@ -87,9 +109,24 @@ const MindGame = () => {
             </h1>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">คลังโจทย์ทายใจระบบ AI 🤖</p>
           </div>
-          <button onClick={() => navigate('/create-level')} className="group flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic transition-all hover:bg-rose-500 active:scale-95 shadow-lg shadow-slate-200">
-            <PlusCircle size={18} /> สร้างด่าน
-          </button>
+          <div className="flex gap-2">
+  <button 
+    onClick={handleBotAutoCreate}
+    disabled={loading}
+    className="group flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic transition-all hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-100"
+  >
+    <Sparkles size={18} />
+    บอทสร้างโจทย์
+  </button>
+
+  <button 
+    onClick={() => navigate('/create-level')}
+    className="group flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic transition-all hover:bg-rose-500 active:scale-95 shadow-lg shadow-slate-200"
+  >
+    <PlusCircle size={18} />
+    สร้างด่าน
+  </button>
+</div>
         </div>
       </div>
 
