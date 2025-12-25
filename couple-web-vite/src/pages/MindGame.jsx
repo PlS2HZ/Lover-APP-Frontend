@@ -11,6 +11,9 @@ const MindGame = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem('user_id');
 
+  // ✅ ID ของคุณ PLSHZ
+  const ADMIN_ID = 'd8eb372a-d196-44fc-a73b-1809f27e0a56'; 
+
   const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
 
@@ -43,12 +46,31 @@ const MindGame = () => {
     }
   };
 
+  // ✅ เพิ่ม Error Log เพื่อเช็คว่าทำไมลบไม่ได้
   const handleDeleteLevel = async (id, word) => {
     if (window.confirm(`คุณต้องการลบโจทย์คำว่า "${word}" ใช่หรือไม่?`)) {
-      // ✅ ทำงานได้เพราะ RLS DELETE Policy: true
-      const { error } = await supabase.from('heart_games').delete().eq('id', id);
-      if (error) alert("ลบไม่สำเร็จ: " + error.message);
-      else fetchLevels();
+      try {
+        // เพิ่มการตรวจสอบ Response ของ Supabase
+        const { error, count } = await supabase
+          .from('heart_games')
+          .delete({ count: 'exact' }) // สั่งให้นับจำนวนแถวที่ลบได้จริง
+          .eq('id', id);
+        
+        if (error) {
+          // 🚩 บรรทัดนี้จะพ่น Error จริงจาก Database ออกมาให้นายเห็นใน Console
+          console.error("❌ [Database Error]:", error); 
+          alert(`ลบไม่สำเร็จ! Error: ${error.message} (Code: ${error.code})`);
+        } else if (count === 0) {
+          // 🚩 ถ้าเข้าเคสนี้ แสดงว่า RLS บล็อก ID ของนายไว้
+          console.warn("⚠️ [Security Block]: ลบสำเร็จ 0 แถว (เช็ค RLS Policy)");
+          alert("ไม่พบข้อมูลที่จะลบ หรือคุณไม่มีสิทธิ์ลบด่านนี้ (เช็ค RLS)");
+        } else {
+          await fetchLevels();
+          alert(`ลบโจทย์สำเร็จ! (ลบไป ${count} แถว)`);
+        }
+      } catch (err) {
+        console.error("💥 [System Crash]:", err);
+      }
     }
   };
   
@@ -65,17 +87,17 @@ const MindGame = () => {
             navigate(`/game-session/${session.id}?mode=bot`);
         }
     } catch (err) { 
-        console.error("Play now error:", err);
+      console.error("Play Now Error:", err);
       alert("ไม่สามารถเริ่มเกมได้"); }
   };
 
-  // ✅ ฟังก์ชันปุ่ม "?" (เฉลย/ใบ้)
   const handleShowHint = (level, bestTime) => {
-    if (bestTime > 0) {
-      alert(`🎉 ด่านนี้คุณเคลียร์แล้ว!\nคำลับคือ: "${level.secret_word}"`);
+    if (level.host_id === userId || bestTime > 0) {
+      alert(`🎉 คำลับของด่านนี้คือ: "${level.secret_word}"`);
     } else {
+      // ✅ ลบ .substring(0, 100) ออกแล้ว เพื่อให้แสดงข้อความ AI ทั้งหมด
       const hint = level.description || "บอทยังไม่ได้เขียนคำอธิบายไว้จ้า";
-      alert(`💡 คำใบ้แรก (Hint Preview):\n${hint.substring(0, 100)}...`);
+      alert(`💡 คำใบ้แรก (Hint Preview):\n${hint}`); 
     }
   };
 
@@ -98,14 +120,11 @@ const MindGame = () => {
       if (res.ok && session.id) {
         navigate(`/bot-game-session/${session.id}`);
       } else {
-        alert("บอทงอแง สุ่มคำให้ไม่ได้ ลองกดใหม่นะ!");
+        alert("บอทงอแง ลองกดใหม่นะ!");
       }
-    } catch (err) {
-      console.error("Bot auto-create error:", err);
-      alert("เชื่อมต่อ Server ไม่สำเร็จ");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { 
+      console.error("Bot Auto Create Error:", err);
+      alert("เชื่อมต่อ Server ไม่สำเร็จ"); } finally { setLoading(false); }
   };
 
   return (
@@ -119,7 +138,7 @@ const MindGame = () => {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">คลังโจทย์ทายใจระบบ AI 🤖</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleBotAutoCreate} disabled={loading} className="group flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-100">
+            <button onClick={handleBotAutoCreate} disabled={loading} className="group flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic transition-all hover:bg-purple-700 active:scale-95 shadow-lg shadow-purple-100">
               <Sparkles size={18} /> บอทสร้างโจทย์
             </button>
             <button onClick={() => navigate('/create-level')} className="group flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl font-bold text-xs uppercase italic hover:bg-rose-500 active:scale-95 shadow-lg shadow-slate-200">
@@ -139,6 +158,11 @@ const MindGame = () => {
         ) : levels.map((level, index) => {
             const isOwner = level.host_id === userId;
             const levelNumber = levels.length - index;
+            
+            // ✅ แก้ไข: ปุ่มถังขยะโขว์เฉพาะเจ้าของด่าน OR คุณ PLSHZ (ADMIN) เท่านั้น
+            const isBotLevel = level.host?.username === 'Bot';
+            const showDeleteBtn = isOwner || (userId === ADMIN_ID && isBotLevel);
+            
             const bestTime = level.sessions?.reduce((min, s) => 
               (s.status === 'finished' && (s.time_spent < min || min === 0) ? s.time_spent : min), 0);
 
@@ -167,18 +191,20 @@ const MindGame = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {isOwner && (
+                    {/* ✅ ปุ่มถังขยะที่ผ่านการกรองสิทธิ์แล้ว */}
+                    {showDeleteBtn && (
                       <button onClick={() => handleDeleteLevel(level.id, level.secret_word)} className="bg-slate-100 text-slate-400 w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-90 shadow-sm">
                         <Trash2 size={20} />
                       </button>
                     )}
-                    <button onClick={() => handlePlayNow(level)} className="bg-gradient-to-br from-rose-400 to-pink-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 hover:from-rose-500 hover:to-pink-700 transition-all">
-                      <Play size={20} fill="currentColor" />
-                    </button>
+                    {!isOwner && (
+                      <button onClick={() => handlePlayNow(level)} className="bg-gradient-to-br from-rose-400 to-pink-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 hover:from-rose-500 hover:to-pink-700 transition-all">
+                        <Play size={20} fill="currentColor" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-50 flex justify-between items-center">
-                   {/* ✅ ปุ่ม "?" ที่อัปเดตใหม่ */}
                    <button 
                     onClick={() => handleShowHint(level, bestTime)}
                     className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-400 hover:bg-purple-100 hover:text-purple-600 transition-colors shadow-sm"
@@ -186,7 +212,7 @@ const MindGame = () => {
                     ?
                    </button>
                    <span className="text-[9px] font-black text-slate-300 uppercase italic">
-                     {bestTime > 0 ? "เคลียร์แล้ว! คลิก ? เพื่อดูเฉลย" : "คลิกปุ่ม Play เพื่อเริ่มทายกับ Bot"}
+                     {bestTime > 0 || isOwner ? "คลิก ? เพื่อดูเฉลย" : "คลิกปุ่ม Play เพื่อเริ่มทายกับ Bot"}
                    </span>
                 </div>
               </div>
