@@ -9,10 +9,10 @@ const Register = () => {
   const navigate = useNavigate();
 
   // ✨ คำนวณ API_URL ตามตำแหน่งที่รันแอป (ใช้ได้ทั้ง localhost และ Vercel)
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080'
-    : 'https://lover-backend.onrender.com';
-
+  // const API_URL = window.location.hostname === 'localhost'
+  //   ? 'http://localhost:8080'
+  //   : 'https://lover-backend.onrender.com';
+  const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

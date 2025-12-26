@@ -17,9 +17,9 @@ const GameSession = ({ user }) => {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
-
+    // const API_URL = window.location.hostname === 'localhost' 
+    //     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+    const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
     useEffect(() => {
         const fetchInitial = async () => {
             if (!id) return;

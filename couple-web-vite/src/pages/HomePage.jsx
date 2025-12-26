@@ -42,8 +42,8 @@ const HomePage = () => {
 
   const isMobileView = typeof window !== 'undefined' && window.innerWidth < 768;
   const userId = localStorage.getItem('user_id');
-  const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
-
+  // const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+  const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
   // ✅ ฟังก์ชันคำนวณเวลาถอยหลัง (เพิ่มเข้ามาเพื่อให้ส่วนรายการสำคัญทำงานได้)
   const getDetailedCountdown = (eventDate, repeatType) => {
     const now = currentTime; 

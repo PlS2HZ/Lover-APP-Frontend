@@ -23,9 +23,9 @@ const ProfilePage = () => {
     });
     const [originalUsername, setOriginalUsername] = useState('');
 
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
-
+    // const API_URL = window.location.hostname === 'localhost' 
+    //     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+    const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
     useEffect(() => { if (userId) fetchProfile(); }, [userId]);
 
     const fetchProfile = async () => {

@@ -12,10 +12,10 @@ const HistoryPage = () => {
   const [selectedImg, setSelectedImg] = useState(null);
   const userId = localStorage.getItem('user_id');
 
-  const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080'
-    : 'https://lover-backend.onrender.com';
-    
+  // const API_URL = window.location.hostname === 'localhost'
+  //   ? 'http://localhost:8080'
+  //   : 'https://lover-backend.onrender.com';
+  const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost  
   const refreshList = useCallback(async (showSilent = false) => {
     if (!userId) return;
     if (!showSilent) setLoading(true);

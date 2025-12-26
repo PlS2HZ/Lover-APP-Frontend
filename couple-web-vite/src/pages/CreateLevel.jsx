@@ -11,9 +11,11 @@ const CreateLevel = () => {
     const navigate = useNavigate();
     const userId = localStorage.getItem('user_id');
 
-    const API_URL = window.location.hostname.includes('localhost') 
-        ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+    // const API_URL = window.location.hostname.includes('localhost') 
+    //     ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
 
+    const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
+    
     const generateAIDesc = async () => {
         if (!secretWord) return alert("ใส่คำลับก่อนนะ เดี๋ยว AI ช่วยเขียนให้!");
         if (description.trim() !== "") {
