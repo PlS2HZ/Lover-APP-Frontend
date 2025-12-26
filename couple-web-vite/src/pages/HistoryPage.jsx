@@ -20,10 +20,8 @@ const HistoryPage = () => {
     if (!userId) return;
     if (!showSilent) setLoading(true);
     try {
-      // ✅ ส่ง user_id ไปเพื่อให้ Backend ดึง Or(sender_id, receiver_id)
       const res = await axios.get(`${API_URL}/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
-        // เรียงลำดับจากใหม่ไปเก่า
         const sorted = res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setRequests(sorted);
       }
@@ -36,11 +34,21 @@ const HistoryPage = () => {
 
   useEffect(() => { refreshList(); }, [refreshList]);
 
+  // ✅ แก้ไข: เพิ่ม Prompt สำหรับปุ่ม Approve และดักการกด Cancel
   const updateStatus = async (id, newStatus) => {
     if (isProcessing) return;
     try {
-      const reason = newStatus === 'rejected' ? prompt("ระบุเหตุผลที่ไม่อนุมัติ:") : "";
-      if (newStatus === 'rejected' && reason === null) return;
+      let reason = "";
+
+      if (newStatus === 'rejected') {
+        reason = prompt("ระบุเหตุผลที่ไม่อนุมัติ:");
+        if (reason === null) return; // ✅ กด Cancel ไม่ทำอะไรต่อ
+      } else if (newStatus === 'approved') {
+        // ✅ เพิ่ม Prompt สำหรับการอนุมัติ (ใส่หรือไม่ใส่ก็ได้)
+        const input = prompt("ใส่คอมเมนต์ถึงแฟน (ไม่ใส่ให้กด OK ได้เลย):");
+        if (input === null) return; // ✅ กด Cancel ไม่ทำอะไรต่อ
+        reason = input; // ✅ ถ้ากด OK โดยไม่พิมพ์ จะได้ค่าว่างตามต้องการ
+      }
 
       setIsProcessing(true);
       const res = await axios.post(`${API_URL}/api/update-status`, { id, status: newStatus, comment: reason });
@@ -56,17 +64,15 @@ const HistoryPage = () => {
     } finally { setIsProcessing(false); }
   };
 
-  // ✅ กรองรายการ "รออนุมัติ": ดึงเฉพาะที่เราเป็น 'ผู้รับ' และสถานะยังเป็น 'pending'
   const pendingList = requests.filter(r => 
     r.status === 'pending' && 
-    String(r.receiver_id).toLowerCase() === String(userId).toLowerCase() // ✅ ใช้ toLowerCase เพื่อกันพลาดเรื่อง Case Sensitive
-);
+    String(r.receiver_id).toLowerCase() === String(userId).toLowerCase()
+  );
   
-  // ✅ กรองรายการ "ประวัติ": ดึงรายการที่ไม่ใช่ pending (อนุมัติ/ไม่อนุมัติแล้ว) หรือที่เราเป็น 'คนส่ง' เองแต่ยังไม่โดนตรวจ
   const historyList = requests.filter(r => 
     r.status !== 'pending' || 
     (r.status === 'pending' && String(r.sender_id).toLowerCase() === String(userId).toLowerCase())
-);
+  );
 
   if (loading) return (
     <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4 text-rose-400 font-black italic px-4 text-center">
