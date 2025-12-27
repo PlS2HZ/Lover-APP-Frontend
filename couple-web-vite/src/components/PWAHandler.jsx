@@ -9,7 +9,7 @@ const PWAHandler = () => {
 
     const userId = localStorage.getItem('user_id');
     const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+        ? 'http://localhost:8080' : 'https://lover-app-jjoe.onrender.com';
 
     // ฟังก์ชันเช็คสถานะจาก DB
     const checkDBStatus = async () => {

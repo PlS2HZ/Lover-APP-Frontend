@@ -23,7 +23,7 @@ const Navbar = () => {
   });
 
   const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8080' : 'https://lover-backend.onrender.com';
+    ? 'http://localhost:8080' : 'https://lover-app-jjoe.onrender.com';
 
   useEffect(() => {
     const syncProfile = async () => {

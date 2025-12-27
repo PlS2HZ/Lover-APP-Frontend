@@ -14,8 +14,8 @@ const HistoryPage = () => {
 
   // const API_URL = window.location.hostname === 'localhost'
   //   ? 'http://localhost:8080'
-  //   : 'https://lover-backend.onrender.com';
-  const API_URL = 'https://lover-backend.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost  
+  //   : 'https://lover-app-jjoe.onrender.com';
+  const API_URL = 'https://lover-app-jjoe.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost  
   const refreshList = useCallback(async (showSilent = false) => {
     if (!userId) return;
     if (!showSilent) setLoading(true);
