@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   Home, Calendar, Send, History, LogOut, 
   Heart, Gift, Image as ImageIcon, Menu, X, 
-  User as UserIcon, Gamepad2
+  User as UserIcon, Gamepad2, Sparkles // เพิ่ม Sparkles มาใช้เป็นไอคอน
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
 
@@ -43,15 +43,16 @@ const Navbar = () => {
   }, [location, userId, API_URL]);
 
   const handleLogout = () => {
-    // ✅ เพิ่มการถามซ้ำก่อนออกจากระบบเพื่อป้องกันการเผลอกด
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่? ❤️")) {
       localStorage.clear();
       navigate("/login");
     }
   };
 
+  // ✅ เพิ่ม Memory Quiz เข้าไปในรายการเมนูหลัก
   const navItems = [
     { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
+    { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> }, // 👈 เพิ่มตรงนี้
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
     { name: 'Moments', path: '/moments', icon: <ImageIcon size={20} className="text-sky-500" /> },
@@ -90,7 +91,6 @@ const Navbar = () => {
 
             {userData.username && (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
-                {/* ✅ ปุ่ม Logout แบบไอคอน วางไว้ข้างโปรไฟล์ */}
                 <button 
                   onClick={handleLogout}
                   className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
@@ -140,21 +140,28 @@ const Navbar = () => {
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Menu Navigation</p>
               </div>
               
-              {navItems.map((item) => (
-                <Link 
-                  key={item.name} 
-                  to={item.path} 
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`relative flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
-                    location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
-                  }`}
-                >
-                  <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
-                    {React.cloneElement(item.icon, { size: 18 })}
-                  </span>
-                  {item.name}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                // ✅ กรองเมนู Memory Quiz ให้เห็นเฉพาะนายและแฟน
+                if (item.path === '/memory-quiz' && !ALLOWED_IDS.includes(userId)) {
+                  return null;
+                }
+
+                return (
+                  <Link 
+                    key={item.name} 
+                    to={item.path} 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`relative flex items-center gap-3 p-3 rounded-2xl font-bold text-xs uppercase italic transition-all ${
+                      location.pathname === item.path ? activeColor : 'text-slate-500 hover:bg-rose-50 hover:text-rose-500'
+                    }`}
+                  >
+                    <span className="p-1.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">
+                      {React.cloneElement(item.icon, { size: 18 })}
+                    </span>
+                    {item.name}
+                  </Link>
+                );
+              })}
 
               {ALLOWED_IDS.includes(userId) && (
                 <Link 

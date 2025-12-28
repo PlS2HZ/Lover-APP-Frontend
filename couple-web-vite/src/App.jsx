@@ -16,6 +16,7 @@ import MindGame from './pages/MindGame';
 import GameSession from './pages/GameSession';
 import CreateLevel from './pages/CreateLevel';
 import BotGameSession from './pages/BotGameSession';
+import MemoryQuizPage from './pages/MemoryQuizPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -130,13 +131,21 @@ function App() {
             }
           />
           <Route
-  path="/bot-game-session/:id"
-  element={
-    <ProtectedRoute>
-      <BotGameSession user={user} />
-    </ProtectedRoute>
-  }
-/>
+            path="/bot-game-session/:id"
+            element={
+              <ProtectedRoute>
+                <BotGameSession user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/memory-quiz"
+            element={
+              <ProtectedRoute>
+                <MemoryQuizPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Router>
     </ThemeProvider>
