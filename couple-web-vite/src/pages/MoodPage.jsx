@@ -25,7 +25,7 @@ const MoodPage = () => {
     
     const userId = localStorage.getItem('user_id');
     // const API_URL = window.location.hostname === 'localhost' 
-    //     ? 'http://localhost:8080' : 'https://lover-app-jjoe.onrender.com';
+    //     ? 'http://localhost:10000' : 'https://lover-app-jjoe.onrender.com';
     const API_URL = 'https://lover-app-jjoe.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
     useEffect(() => {
         fetchMoodHistory();

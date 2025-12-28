@@ -16,7 +16,7 @@ const HomeAdminPage = () => {
     const navigate = useNavigate();
     const userId = localStorage.getItem('user_id');
     const ALLOWED_IDS = ["d8eb372a-d196-44fc-a73b-1809f27e0a56", "f384c03a-55bb-4d5f-b3f5-4f2052a9d00e"];
-    // const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://lover-app-jjoe.onrender.com';
+    // const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:10000' : 'https://lover-app-jjoe.onrender.com';
     const API_URL = 'https://lover-app-jjoe.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost
     useEffect(() => {
         if (!ALLOWED_IDS.includes(userId)) {
