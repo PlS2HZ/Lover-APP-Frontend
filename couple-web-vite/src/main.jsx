@@ -9,16 +9,23 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
-// ✅ ส่วนที่เพิ่มเข้าไปเพื่อให้ PWA อัปเดตอัตโนมัติ
+// ✅ แก้ไข: เพิ่มส่วน Register Service Worker ให้ถูกต้อง
 if ('serviceWorker' in navigator) {
-  // เมื่อ Service Worker พร้อมทำงาน
-  navigator.serviceWorker.ready.then(registration => {
-    // สั่งให้เช็คหาไฟล์เวอร์ชันใหม่จาก Server (Vercel/GitHub) ทันที
-    registration.update(); 
+  window.addEventListener('load', () => {
+    // 🌟 1. สั่งลงทะเบียนไฟล์ sw.js
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('✅ Service Worker Registered!', registration);
+        
+        // 🌟 2. เมื่อพร้อมแล้ว สั่งเช็คอัปเดต
+        registration.update();
+      })
+      .catch(err => {
+        console.error('❌ Service Worker Registration Failed:', err);
+      });
   });
 
-  // ถ้าตรวจพบว่ามีไฟล์เวอร์ชันใหม่ และถูกติดตั้ง (installed) เรียบร้อยแล้ว
-  // ให้ทำการรีเฟรชหน้าเว็บอัตโนมัติเพื่อให้ผู้ใช้เห็นโค้ดล่าสุด
+  // 🌟 3. ถ้าระบบเปลี่ยน Controller (มีเวอร์ชันใหม่) ให้รีโหลด
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload(); 
   });
