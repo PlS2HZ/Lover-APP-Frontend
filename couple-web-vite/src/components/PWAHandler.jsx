@@ -10,7 +10,6 @@ const PWAHandler = () => {
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:10000' : 'https://lover-app-jjoe.onrender.com';
 
-    // 🌟 ดึงค่าจาก Env หรือใส่ค่าที่ถูกต้องที่สุด (ต้องตรงกับ Backend)
     const VAPID_PUBLIC_KEY = "BCvD9YU-2qHuXuolgoxZr7ggnLZEcSRZWgjVGQuWrkBIzEWuwwkoZLxBU_80d0JEusI8onyI76AJNAUX-EsFODk";
 
     const checkDBStatus = async () => {
@@ -29,35 +28,41 @@ const PWAHandler = () => {
         checkDBStatus();
     }, [userId]);
 
-    const handleSubscribe = async () => {
-        try {
-            const permission = await Notification.requestPermission();
-            
-            if (permission === 'granted') {
-                const registration = await navigator.serviceWorker.ready;
-                
-                // 🌟 ใช้ Key ที่นายเพิ่งเจนมาใหม่ (ห้ามใช้ตัวเก่าในโค้ดเดิม)
-                const subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
+   // src/components/PWAHandler.jsx
 
-                // 🌟 ส่งเป็น JSON String ไปเลยเพื่อกันปัญหา "" ใน Database
-                await axios.post(`${API_URL}/api/save-subscription`, {
-                    user_id: userId,
-                    subscription: JSON.stringify(subscription) // บังคับเป็น String
-                });
-                
-                setIsSubscribedInDB(true);
-                alert('เปิดการแจ้งเตือนสำเร็จ! ❤️');
-            } else {
-                alert('โปรดอนุญาตสิทธิ์การแจ้งเตือนด้วยนะครับ');
-            }
-        } catch (err) { 
-            console.error("Subscription Error:", err);
-            alert('เกิดข้อผิดพลาด: ' + err.message); 
+const handleSubscribe = async () => {
+    try {
+        // 1. ขอสิทธิ์แจ้งเตือน
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            const registration = await navigator.serviceWorker.ready;
+            
+            // 🌟 แก้ไข: ใช้รหัส Public Key ที่ถูกต้อง (ต้องตรงกับ Backend)
+            const VAPID_PUBLIC_KEY = "BCvD9YU-2qHuXuolgoxZr7ggnLZEcSRZWgjVGQuWrkBIzEWuwwkoZLxBU_80d0JEusI8onyI76AJNAUX-EsFODk";
+            
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+
+            // 🌟 แก้ไข: บังคับส่งเป็น JSON String เพื่อป้องกันปัญหา "" ใน Database
+            await axios.post(`${API_URL}/api/save-subscription`, {
+                user_id: userId,
+                subscription: JSON.stringify(subscription)
+            });
+            
+            setIsSubscribedInDB(true);
+            alert('เปิดการแจ้งเตือนสำเร็จ! ❤️');
+        } else {
+            alert('โปรดอนุญาตสิทธิ์การแจ้งเตือนที่รูปกุญแจซ้ายบนด้วยนะครับ');
         }
-    };
+    } catch (err) { 
+        console.error("Subscription Error:", err);
+        // ถ้าเกิด Error ตรงนี้ นายจะเห็นข้อความแจ้งเตือนที่หน้าจอโทรศัพท์เลย
+        alert('เกิดข้อผิดพลาด: ' + err.message); 
+    }
+};
 
     const handleUnsubscribe = async () => {
         if (window.confirm("ต้องการปิดการแจ้งเตือนใช่หรือไม่?")) {
