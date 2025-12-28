@@ -3,7 +3,6 @@ import axios from 'axios';
 import { Bell, BellOff } from 'lucide-react';
 
 const PWAHandler = () => {
-    // ✅ สถานะการลงทะเบียนในฐานข้อมูล (ความจริงหลัก)
     const [isSubscribedInDB, setIsSubscribedInDB] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -11,7 +10,9 @@ const PWAHandler = () => {
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:10000' : 'https://lover-app-jjoe.onrender.com';
 
-    // ฟังก์ชันเช็คสถานะจาก DB
+    // 🌟 ดึงค่าจาก Env หรือใส่ค่าที่ถูกต้องที่สุด (ต้องตรงกับ Backend)
+    const VAPID_PUBLIC_KEY = "BCvD9YU-2qHuXuolgoxZr7ggnLZEcSRZWgjVGQuWrkBIzEWuwwkoZLxBU_80d0JEusI8onyI76AJNAUX-EsFODk";
+
     const checkDBStatus = async () => {
         if (!userId) { setIsLoading(false); return; }
         try {
@@ -30,41 +31,40 @@ const PWAHandler = () => {
 
     const handleSubscribe = async () => {
         try {
-            // 1. ขอสิทธิ์จากเบราว์เซอร์ก่อน (ถ้ายังไม่ได้กดอนุญาตซ้ายบน)
             const permission = await Notification.requestPermission();
             
             if (permission === 'granted') {
                 const registration = await navigator.serviceWorker.ready;
-                const publicKey = "BOkbnuWUKrV8BKHA5UkNQAovhejO3ANCGjrY2M86OsYZ_WHRZSYUAaeKvh0g6qr1WjI5pZdZ1PwCelM6_ReNbF0";
                 
+                // 🌟 ใช้ Key ที่นายเพิ่งเจนมาใหม่ (ห้ามใช้ตัวเก่าในโค้ดเดิม)
                 const subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                 });
 
-                // 2. ส่งข้อมูลไปบันทึกใน DB
+                // 🌟 ส่งเป็น JSON String ไปเลยเพื่อกันปัญหา "" ใน Database
                 await axios.post(`${API_URL}/api/save-subscription`, {
                     user_id: userId,
-                    subscription: subscription
+                    subscription: JSON.stringify(subscription) // บังคับเป็น String
                 });
                 
                 setIsSubscribedInDB(true);
-                alert('เปิดการแจ้งเตือนสำเร็จ! ระบบจะแจ้งเตือนคุณเมื่อมีกิจกรรมใหม่ ❤️');
+                alert('เปิดการแจ้งเตือนสำเร็จ! ❤️');
             } else {
-                alert('คุณยังไม่ได้อนุญาตสิทธิ์การแจ้งเตือน โปรดกดอนุญาตที่รูปกุญแจซ้ายบนของเบราว์เซอร์ด้วยนะครับ');
+                alert('โปรดอนุญาตสิทธิ์การแจ้งเตือนด้วยนะครับ');
             }
         } catch (err) { 
             console.error("Subscription Error:", err);
-            alert('เกิดข้อผิดพลาดในการเปิดใช้งาน'); 
+            alert('เกิดข้อผิดพลาด: ' + err.message); 
         }
     };
 
     const handleUnsubscribe = async () => {
-        if (window.confirm("คุณต้องการปิดการแจ้งเตือนบนเครื่องนี้ใช่หรือไม่?")) {
+        if (window.confirm("ต้องการปิดการแจ้งเตือนใช่หรือไม่?")) {
             try {
                 await axios.post(`${API_URL}/api/unsubscribe`, { user_id: userId });
                 setIsSubscribedInDB(false);
-                alert('ปิดการแจ้งเตือนเรียบร้อยแล้ว ✨');
+                alert('ปิดการแจ้งเตือนเรียบร้อย ✨');
             } catch (err) { 
                 console.error("Unsubscribe Error:", err);
                 alert('ปิดไม่สำเร็จ'); 
@@ -72,7 +72,7 @@ const PWAHandler = () => {
         }
     };
 
-    if (isLoading) return <div className="p-4 text-center animate-pulse text-slate-300">กำลังตรวจสอบสถานะ...</div>;
+    if (isLoading) return <div className="p-4 text-center text-slate-300">กำลังตรวจสอบ...</div>;
 
     return (
         <div className={`p-5 rounded-[2.5rem] border-2 transition-all ${isSubscribedInDB ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
@@ -84,7 +84,7 @@ const PWAHandler = () => {
                     </p>
                 </div>
                 {isSubscribedInDB ? (
-                    <button onClick={handleUnsubscribe} className="p-3 bg-white text-rose-500 rounded-2xl shadow-sm border border-rose-100 hover:bg-rose-50 transition-all active:scale-90">
+                    <button onClick={handleUnsubscribe} className="p-3 bg-white text-rose-500 rounded-2xl shadow-sm border border-rose-100 active:scale-90">
                         <BellOff size={18} />
                     </button>
                 ) : (
