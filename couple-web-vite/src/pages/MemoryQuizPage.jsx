@@ -84,12 +84,22 @@ const MemoryQuizPage = () => {
     };
 
     const fetchQuiz = async () => {
-        setLoading(true); setQuiz(null); setWrongAnswers([]); setIsCorrect(false);
+        setLoading(true); 
+        setQuiz(null); 
+        setWrongAnswers([]); 
+        setIsCorrect(false);
         setScore({ correct: 0, wrong: 0 });
+        
         try {
-            const res = await axios.get(`${API_URL}/api/memory-quiz/random`);
-            setQuiz(res.data);
-        } catch (err) { console.error("Fetch Quiz Error:", err); }
+            // ✅ แก้ไข: ส่ง user_id ไปเพื่อให้ API สุ่มความทรงจำที่คนนี้มองเห็นได้จริงๆ
+            const res = await axios.get(`${API_URL}/api/memory-quiz/random?user_id=${userId}`);
+            if (res.data) {
+                setQuiz(res.data);
+            }
+        } catch (err) { 
+            console.error("Fetch Quiz Error:", err);
+            alert("กามเทพนึกไม่ออก ลองพิมพ์เพิ่มข้อมูลดูนะ ✨");
+        }
         setLoading(false);
     };
 
