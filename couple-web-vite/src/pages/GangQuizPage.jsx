@@ -142,6 +142,11 @@ const GangQuizPage = () => {
             return updated;
         });
 
+        // 🎯 [จุดที่ต้องแทรกเพิ่ม] ล้างกรอบสีเหลือง/Highlight บนมือถือทันทีที่จิ้มเสร็จ
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         if (currentPlayerIndex < players.length - 1) {
             setCurrentPlayerIndex(prev => prev + 1);
             setHiddenOptions([]); setShowGoldenHint(false); setIsShieldActive(false); setTargetVictim(null); setSelectedItem(null);
