@@ -142,14 +142,21 @@ const GangQuizPage = () => {
             return updated;
         });
 
-        // 🎯 [จุดที่ต้องแทรกเพิ่ม] ล้างกรอบสีเหลือง/Highlight บนมือถือทันทีที่จิ้มเสร็จ
+        // ✅ [แก้ไขจุดที่ 1] ล้างสถานะ Focus/Hover บนมือถือให้หายขาด
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
+        // บังคับให้ Window เลิกสนใจการคลิกค้าง
+        window.getSelection()?.removeAllRanges();
 
         if (currentPlayerIndex < players.length - 1) {
+            // ✅ [แก้ไขจุดที่ 2] บังคับ Re-render ส่วนของปุ่มเพื่อล้างสี Highlight ของระบบมือถือ
             setCurrentPlayerIndex(prev => prev + 1);
-            setHiddenOptions([]); setShowGoldenHint(false); setIsShieldActive(false); setTargetVictim(null); setSelectedItem(null);
+            setHiddenOptions([]); 
+            setShowGoldenHint(false); 
+            setIsShieldActive(false); 
+            setTargetVictim(null); 
+            setSelectedItem(null);
         } else {
             setPlayers(currentPlayers => {
                 const finalUpdated = [...currentPlayers];
