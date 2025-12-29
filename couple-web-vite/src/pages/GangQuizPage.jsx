@@ -11,6 +11,7 @@ const GangQuizPage = () => {
     ]);
     const [maxQuestions, setMaxQuestions] = useState(10);
     const [category, setCategory] = useState('ความรู้รอบตัว');
+    const [playedQuestions, setPlayedQuestions] = useState([]);
 
     // --- State สำหรับดำเนินเกม ---
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -56,11 +57,17 @@ const GangQuizPage = () => {
         setTargetVictim(null);
         setSelectedItem(null);
         try {
-            const res = await axios.get(`${API_URL}/api/gang-quiz/random?category=${category}`);
-            if (res.data) { setQuiz(res.data); setGameState('playing'); }
+            const excludeList = playedQuestions.join(',');
+            const res = await axios.get(`${API_URL}/api/gang-quiz/random?category=${category}&exclude=${encodeURIComponent(excludeList)}`);
+            
+            if (res.data) { 
+                setQuiz(res.data); 
+                setPlayedQuestions(prev => [...prev, res.data.question]);
+                setGameState('playing'); 
+            }
         } catch (err) { console.error(err); setGameState('setup'); }
         setLoading(false);
-    }, [category, API_URL]);
+    }, [category, playedQuestions, API_URL]);
 
     const removeItem = useCallback((itemType) => {
         setPlayers(prev => {
@@ -77,19 +84,24 @@ const GangQuizPage = () => {
         setSelectedItem(null);
     }, [currentPlayerIndex]);
 
+    // ✅ ปรับแต่ง Rate ไอเทมและขีดจำกัดตามคำสั่งนาย
     const giveRandomItem = useCallback((pIdx) => {
         setPlayers(prev => {
             const updated = [...prev];
             const player = updated[pIdx];
-            if (player.items.length >= 5) return prev; 
+            
+            // 🎒 ขีดจำกัดคลังไอเทม: นายขอเปลี่ยนเป็น 4 ชิ้น
+            if (player.items.length >= 4) return prev; 
 
             const roll = Math.random() * 100;
             let newItem = null;
 
-            if (roll < 50) newItem = 'golden';     
-            else if (roll < 60) newItem = 'bomb';   
-            else if (roll < 70) newItem = 'shield'; 
-            else if (roll < 80) newItem = 'oracle'; 
+            // 🎯 ปรับ Rate ตามที่นายวิเคราะห์ (สะสมโอกาสสุ่ม)
+            if (roll < 10) newItem = 'golden';      // 🟡 10% เนตรพระเจ้า
+            else if (roll < 25) newItem = 'bomb';    // 💣 15% ระเบิดสั่งตาย (10 + 15 = 25)
+            else if (roll < 45) newItem = 'shield';  // 🛡️ 20% โล่ศักดิ์สิทธิ์ (25 + 20 = 45)
+            else if (roll < 80) newItem = 'oracle';  // 🔵 35% ดวงตาสีน้ำเงิน (45 + 35 = 80)
+            // (อีก 20% ที่เหลือคือไม่ได้ไอเทม เพื่อความท้าทาย)
 
             if (newItem) player.items.push(newItem);
             return updated;
@@ -118,14 +130,13 @@ const GangQuizPage = () => {
             
             if (isCorrect) {
                 player.score += 1;
-                // นายสั่งแก้: ให้ไอเทมเฉพาะเมื่อตอบถูกจริงเท่านั้น (isCorrect === true)
+                // ✅ ได้ไอเทมเฉพาะเมื่อตอบถูกจริงเท่านั้น
                 giveRandomItem(currentPlayerIndex);
             } else {
                 player.wrong += 1;
                 if (isShieldActive) {
                     player.shieldSaves += 1; 
                 }
-                // ไม่มีการเรียก giveRandomItem ตรงนี้ แม้จะใช้โล่รอดก็ตาม
             }
             updated[currentPlayerIndex] = player;
             return updated;
@@ -141,6 +152,7 @@ const GangQuizPage = () => {
                     if (ans.bombTarget) {
                         const victimIdx = finalUpdated.findIndex(p => p.name === ans.bombTarget);
                         const victimAns = updatedRoundAnswers.find(a => a.playerIndex === victimIdx);
+                        // โล่เขียวกันระเบิดได้ 100%
                         if (victimAns && !victimAns.isCorrect && !victimAns.usedShield) {
                             finalUpdated[victimIdx].bombHits += 1; 
                         }
@@ -156,7 +168,7 @@ const GangQuizPage = () => {
         const info = {
             'shield': { title: 'โล่ศักดิ์สิทธิ์', desc: 'ป้องกันแต้มผิดและระเบิดได้ 100% ในตานี้' },
             'oracle': { title: 'ดวงตาสีน้ำเงิน', desc: 'ตัดตัวเลือกที่ผิดทิ้ง 2 ข้อ' },
-            'bomb': { title: 'ระเบิดสั่งตาย', desc: 'เลือกเพื่อน 1 คน ถ้าเขาตอบผิด เขาจะโดน x2' },
+            'bomb': { title: 'ระเบิดสั่งตาย', desc: 'เลือกเป้าหมาย 1 คน ถ้าเขาตอบผิด เขาจะโดน x2' },
             'golden': { title: 'เนตรพระเจ้า', desc: 'เห็นเฉลยที่ถูกต้องทันที' }
         };
         return info[type];
@@ -166,8 +178,9 @@ const GangQuizPage = () => {
         <div className="max-w-md mx-auto p-6 bg-slate-900 min-h-screen text-white font-bold relative overflow-hidden text-sm">
             {itemFeedback && <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-slate-900 px-6 py-3 rounded-2xl shadow-2xl z-[100] animate-bounce text-[10px] uppercase font-black">{itemFeedback}</div>}
 
-            <h1 className="text-2xl font-black italic text-center mb-8 text-yellow-400 uppercase tracking-tighter font-black">Harry's Roulette Quiz 🍭</h1>
+            <h1 className="text-2xl font-black italic text-center mb-8 text-yellow-400 uppercase tracking-tighter">Harry's Roulette Quiz 🍭</h1>
 
+            {/* --- SETUP --- */}
             {gameState === 'setup' && (
                 <div className="space-y-6 animate-in fade-in font-black">
                     <div className="bg-slate-800 p-6 rounded-[2rem] border-2 border-slate-700 shadow-xl text-center">
@@ -177,7 +190,7 @@ const GangQuizPage = () => {
                                 <div key={i} className="flex gap-2 animate-in slide-in-from-left">
                                     <input value={p.name} onChange={(e) => updatePlayerName(i, e.target.value)}
                                         placeholder={`คนที่ ${i+1}`} className="flex-1 bg-slate-700 p-3 rounded-xl outline-none border-2 border-transparent focus:border-yellow-400 font-black" />
-                                    {players.length > 2 && <button onClick={() => removePlayer(i)} className="text-rose-400 p-2 font-black"><UserMinus size={20}/></button>}
+                                    {players.length > 2 && <button onClick={() => removePlayer(i)} className="text-rose-400 p-2"><UserMinus size={20}/></button>}
                                 </div>
                             ))}
                         </div>
@@ -186,7 +199,7 @@ const GangQuizPage = () => {
 
                     <div className="grid grid-cols-2 gap-4 font-black">
                         <div className="bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 text-center font-black">
-                            <label className="text-[9px] uppercase text-slate-400 block mb-2 font-black">จำนวนข้อ</label>
+                            <label className="text-[9px] uppercase text-slate-400 block mb-2">จำนวนข้อ</label>
                             <div className="flex justify-around font-black">
                                 {[5, 10, 20].map(n => <button key={n} onClick={() => setMaxQuestions(n)} className={`text-xs px-2 py-1 rounded transition-colors font-black ${maxQuestions === n ? 'bg-yellow-400 text-slate-900' : 'text-slate-500 hover:text-white'}`}>{n}</button>)}
                             </div>
@@ -201,10 +214,11 @@ const GangQuizPage = () => {
                             </select>
                         </div>
                     </div>
-                    <button onClick={async () => { setPlayers(players.map(p=>({...p, score:0, wrong:0, shieldSaves:0, bombHits:0}))); setCurrentQuestionIndex(0); await startNewRound(); }} disabled={loading} className="w-full py-5 bg-yellow-400 text-slate-900 rounded-[2rem] font-black uppercase italic shadow-lg active:scale-95 transition-all font-black">เริ่มสงครามลูกอม ✨</button>
+                    <button onClick={async () => { setPlayers(players.map(p=>({...p, score:0, wrong:0, shieldSaves:0, bombHits:0}))); setPlayedQuestions([]); setCurrentQuestionIndex(0); await startNewRound(); }} disabled={loading} className="w-full py-5 bg-yellow-400 text-slate-900 rounded-[2rem] font-black uppercase italic shadow-lg active:scale-95 transition-all font-black">เริ่มสงครามลูกอม ✨</button>
                 </div>
             )}
 
+            {/* --- PLAYING --- */}
             {gameState === 'playing' && quiz && (
                 <div className="space-y-6 animate-in slide-in-from-right font-black">
                     <div className="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 font-black">
@@ -225,7 +239,7 @@ const GangQuizPage = () => {
                                     className={`w-full p-4 border-2 rounded-2xl text-xs text-left transition-all flex justify-between items-center font-black
                                     ${showGoldenHint && i === quiz.answer_index ? 'bg-yellow-400/20 border-yellow-400 text-yellow-900 scale-105 font-black' : 'bg-slate-800 border-slate-700 hover:border-yellow-400 font-black'}`}>
                                     <span>{opt}</span>
-                                    {showGoldenHint && i === quiz.answer_index && <Sparkles size={16} className="text-yellow-600 animate-pulse font-black"/>}
+                                    {showGoldenHint && i === quiz.answer_index && <Sparkles size={16} className="text-yellow-600 animate-pulse"/>}
                                 </button>
                             )
                         ))}
@@ -239,7 +253,7 @@ const GangQuizPage = () => {
                                     <div className="grid grid-cols-2 gap-2 font-black">
                                         {players.filter((_, idx) => idx !== currentPlayerIndex).map((p, idx) => (
                                             <button key={idx} onClick={() => { setTargetVictim(p.name); setItemFeedback(`💣 ล็อกเป้าหมายที่ ${p.name}!`); removeItem('bomb'); }}
-                                                className="bg-slate-700 p-2 rounded-xl text-[9px] hover:bg-rose-500 transition-colors uppercase font-black">
+                                                className="bg-slate-700 p-2 rounded-xl text-[9px] hover:bg-rose-500 transition-colors uppercase font-black font-black">
                                                 {p.name}
                                             </button>
                                         ))}
@@ -248,10 +262,10 @@ const GangQuizPage = () => {
                                 </div>
                             ) : selectedItem ? (
                                 <div className="text-center space-y-3 animate-in fade-in duration-300 font-black">
-                                    <p className="text-[11px] text-yellow-400 uppercase font-black font-black">{getItemInfo(selectedItem).title}</p>
-                                    <p className="text-[9px] text-slate-300 italic leading-relaxed font-black">{getItemInfo(selectedItem).desc}</p>
+                                    <p className="text-[11px] text-yellow-400 uppercase font-black font-black font-black">{getItemInfo(selectedItem).title}</p>
+                                    <p className="text-[9px] text-slate-300 italic font-black font-black">{getItemInfo(selectedItem).desc}</p>
                                     <div className="flex gap-2 justify-center font-black">
-                                        <button onClick={() => setSelectedItem(null)} className="px-4 py-1.5 bg-slate-700 rounded-lg text-[9px] uppercase font-black">ยกเลิก</button>
+                                        <button onClick={() => setSelectedItem(null)} className="px-4 py-1.5 bg-slate-700 rounded-lg text-[9px] uppercase">ยกเลิก</button>
                                         <button onClick={() => {
                                             if(selectedItem === 'oracle') { 
                                                 let wrongIndices = [];
@@ -262,15 +276,15 @@ const GangQuizPage = () => {
                                             }
                                             if(selectedItem === 'golden') { setShowGoldenHint(true); setItemFeedback("✨ เห็นเฉลยแล้ว!"); removeItem('golden'); }
                                             if(selectedItem === 'shield') { setIsShieldActive(true); setItemFeedback("🛡️ โล่ทำงาน!"); removeItem('shield'); }
-                                        }} className="px-4 py-1.5 bg-yellow-400 text-slate-900 rounded-lg text-[9px] uppercase font-black shadow-lg">ใช้ไอเทม ✨</button>
+                                        }} className="px-4 py-1.5 bg-yellow-400 text-slate-900 rounded-lg text-[9px] uppercase font-black shadow-lg font-black">ใช้ไอเทม ✨</button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex gap-4 justify-center font-black">
+                                <div className="flex gap-4 justify-center font-black font-black">
                                     {players[currentPlayerIndex].items.map((item, idx) => (
                                         <button key={idx} onClick={() => setSelectedItem(item)}
                                             className={`p-4 rounded-full shadow-lg transition-all active:scale-75 font-black
-                                            ${item === 'shield' ? 'bg-green-500' : item === 'oracle' ? 'bg-blue-500' : item === 'bomb' ? 'bg-rose-500' : 'bg-yellow-400 text-slate-900'}`}>
+                                            ${item === 'shield' ? 'bg-green-500 font-black' : item === 'oracle' ? 'bg-blue-500 font-black' : item === 'bomb' ? 'bg-rose-500 font-black' : 'bg-yellow-400 text-slate-900 font-black'}`}>
                                             {item === 'shield' ? <Shield size={22}/> : item === 'oracle' ? <Eye size={22}/> : item === 'bomb' ? <Bomb size={22}/> : <Sparkles size={22}/>}
                                         </button>
                                     ))}
@@ -286,7 +300,7 @@ const GangQuizPage = () => {
                 <div className="space-y-5 animate-in zoom-in font-black">
                     <h2 className="text-xl font-black text-center text-yellow-400 italic uppercase underline decoration-rose-500 font-black">ผลตัดสินรอบนี้! 🍭</h2>
                     <div className="bg-white/10 border-2 border-yellow-400/50 p-5 rounded-[2.5rem] shadow-xl text-center font-black">
-                        <p className="text-xl text-green-400 font-black italic uppercase">เฉลย: "{quiz.options[quiz.answer_index]}"</p>
+                        <p className="text-xl text-green-400 font-black italic uppercase font-black">เฉลย: "{quiz.options[quiz.answer_index]}"</p>
                     </div>
 
                     <div className="bg-slate-800 rounded-[2rem] p-5 border-2 border-slate-700 shadow-inner font-black">
@@ -297,59 +311,59 @@ const GangQuizPage = () => {
                             const hitByBomb = isVictim && ans && !ans.isCorrect && !ans.usedShield;
 
                             return (
-                                <div key={i} className={`flex justify-between items-center p-3 rounded-xl mb-2 border-2 font-black ${ans?.isCorrect || ans?.usedShield ? 'bg-green-500/10 border-green-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
-                                    <div className="flex flex-col font-black">
+                                <div key={i} className={`flex justify-between items-center p-3 rounded-xl mb-2 border-2 font-black ${ans?.isCorrect || ans?.usedShield ? 'bg-green-500/10 border-green-500/30' : 'bg-rose-500/10 border-rose-500/30 font-black'}`}>
+                                    <div className="flex flex-col font-black font-black">
                                         <div className="flex gap-2 items-center font-black">
                                             <span className="text-sm uppercase font-black">{p.name}</span>
-                                            {ans?.usedShield && <span className="text-[7px] bg-green-600 px-1.5 py-0.5 rounded text-white font-black">โล่ (รอด)</span>}
-                                            {ans?.bombTarget && <span className="text-[7px] bg-rose-600 px-1.5 py-0.5 rounded text-white font-black">บึ้ม {ans.bombTarget}!</span>}
+                                            {ans?.usedShield && <span className="text-[7px] bg-green-600 px-1.5 py-0.5 rounded text-white font-black font-black">โล่ (รอด)</span>}
+                                            {ans?.bombTarget && <span className="text-[7px] bg-rose-600 px-1.5 py-0.5 rounded text-white font-black font-black">บึ้ม {ans.bombTarget}!</span>}
                                         </div>
-                                        <span className="text-[8px] text-slate-400 mt-1 font-black">ถูก {p.score} | ผิด {p.wrong} {p.bombHits > 0 ? `| 💣 -${p.bombHits}` : ''}</span>
+                                        <span className="text-[8px] text-slate-400 mt-1 font-black font-black">ถูก {p.score} | ผิด {p.wrong} {p.bombHits > 0 ? `| 💣 -${p.bombHits}` : ''}</span>
                                     </div>
-                                    <div className="flex flex-col items-end font-black">
-                                        {ans?.isCorrect || ans?.usedShield ? <CheckCircle2 className="text-green-500" size={16}/> : <XCircle className="text-rose-500" size={16}/>}
-                                        {hitByBomb && <span className="text-[7px] text-yellow-400 font-black">💥 โดน x2!</span>}
+                                    <div className="flex flex-col items-end font-black font-black">
+                                        {ans?.isCorrect || ans?.usedShield ? <CheckCircle2 className="text-green-500 font-black" size={16}/> : <XCircle className="text-rose-500 font-black" size={16}/>}
+                                        {hitByBomb && <span className="text-[7px] text-yellow-400 font-black font-black font-black">💥 โดน x2!</span>}
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                     <button onClick={async () => { if(currentQuestionIndex < maxQuestions - 1) { setCurrentQuestionIndex(prev => prev + 1); await startNewRound(); } else { setGameState('endgame'); } }}
-                        className="w-full py-4 bg-yellow-400 text-slate-900 rounded-2xl font-black uppercase italic shadow-xl active:scale-95 font-black">ไปต่อ ↻</button>
+                        className="w-full py-4 bg-yellow-400 text-slate-900 rounded-2xl font-black uppercase italic shadow-xl active:scale-95 font-black font-black font-black">ไปต่อ ↻</button>
                 </div>
             )}
 
             {/* --- ENDGAME --- */}
             {gameState === 'endgame' && (
                 <div className="space-y-6 text-center animate-in bounce-in font-black">
-                    <h2 className="text-3xl font-black text-yellow-400 italic uppercase tracking-widest font-black">ใครซวยที่สุด?</h2>
-                    <div className="bg-slate-800 rounded-[2.5rem] p-6 border-2 border-slate-700 shadow-xl font-black">
+                    <h2 className="text-3xl font-black text-yellow-400 italic uppercase tracking-widest font-black font-black font-black">ใครซวยที่สุด?</h2>
+                    <div className="bg-slate-800 rounded-[2.5rem] p-6 border-2 border-slate-700 shadow-xl font-black font-black font-black font-black">
                         {players.sort((a,b) => a.score - b.score).map((p, i, sorted) => {
                             const isWorst = p.score === sorted[0].score;
                             return (
-                                <div key={i} className="py-4 border-b border-slate-700 last:border-0 px-4 font-black">
+                                <div key={i} className="py-4 border-b border-slate-700 last:border-0 px-4 font-black font-black font-black font-black">
                                     <div className="flex justify-between items-center mb-3 font-black">
-                                        <div className="flex items-center gap-2 font-black">
+                                        <div className="flex items-center gap-2 font-black font-black font-black font-black font-black">
                                             {isWorst ? <Ghost className="text-rose-500" size={20}/> : <Trophy className="text-yellow-400" size={20}/>}
-                                            <span className="uppercase text-sm font-black">{isWorst ? '🤢 ผู้ดวงกุด' : '🏆 ผู้รอดชีวิต'} : {p.name}</span>
+                                            <span className="uppercase text-sm font-black font-black font-black">{isWorst ? '🤢 ผู้ดวงกุด' : '🏆 ผู้รอดชีวิต'} : {p.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 font-black">ครบ {maxQuestions} ข้อ</span>
+                                        <span className="text-[10px] text-slate-400 font-black font-black font-black font-black">ครบ {maxQuestions} ข้อ</span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 font-black">
-                                        <div className="bg-green-500/10 p-2 rounded-lg border border-green-500/30 text-green-400 text-[10px] font-black">ถูก {p.score}</div>
-                                        <div className="bg-rose-500/10 p-2 rounded-lg border border-rose-500/30 text-rose-400 text-[10px] text-left font-black">ผิด {p.wrong}</div>
+                                    <div className="grid grid-cols-2 gap-2 font-black font-black font-black font-black">
+                                        <div className="bg-green-500/10 p-2 rounded-lg border border-green-500/30 text-green-400 text-[10px] font-black font-black">ถูก {p.score}</div>
+                                        <div className="bg-rose-500/10 p-2 rounded-lg border border-rose-500/30 text-rose-400 text-[10px] text-left font-black font-black font-black">ผิด {p.wrong}</div>
                                     </div>
                                     {(p.bombHits > 0 || p.shieldSaves > 0) && (
-                                        <div className="mt-2 flex gap-2 justify-center font-black">
-                                            {p.bombHits > 0 && <span className="bg-rose-600/20 text-rose-500 px-2 py-0.5 rounded text-[8px] font-black">💣 ระเบิดสะสม -{p.bombHits}</span>}
-                                            {p.shieldSaves > 0 && <span className="bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-[8px] font-black">🛡️ ป้องกันสำเร็จ {p.shieldSaves} ครั้ง</span>}
+                                        <div className="mt-2 flex gap-2 justify-center font-black font-black">
+                                            {p.bombHits > 0 && <span className="bg-rose-600/20 text-rose-500 px-2 py-0.5 rounded text-[8px] font-black font-black font-black">💣 ระเบิดสะสม -{p.bombHits}</span>}
+                                            {p.shieldSaves > 0 && <span className="bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-[8px] font-black font-black font-black font-black">🛡️ ป้องกันสำเร็จ {p.shieldSaves} ครั้ง</span>}
                                         </div>
                                     )}
                                 </div>
                             );
                         })}
                     </div>
-                    <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black uppercase italic shadow-xl shadow-rose-500/20 active:scale-95 font-black">เริ่มวงใหม่ ↻</button>
+                    <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black uppercase italic shadow-xl shadow-rose-500/20 active:scale-95 font-black font-black font-black">เริ่มวงใหม่ ↻</button>
                 </div>
             )}
         </div>
