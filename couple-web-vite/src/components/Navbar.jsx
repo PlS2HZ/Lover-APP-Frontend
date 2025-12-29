@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   Home, Calendar, Send, History, LogOut, 
   Heart, Gift, Image as ImageIcon, Menu, X, 
-  User as UserIcon, Gamepad2, Sparkles // เพิ่ม Sparkles มาใช้เป็นไอคอน
+  User as UserIcon, Gamepad2, Sparkles, Dices // ✅ เพิ่ม Dices มาใช้เป็นไอคอน Gang Quiz
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants';
 
@@ -49,10 +49,11 @@ const Navbar = () => {
     }
   };
 
-  // ✅ เพิ่ม Memory Quiz เข้าไปในรายการเมนูหลัก
+  // ✅ เพิ่มเมนู Gang Quiz และ Memory Quiz
   const navItems = [
     { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
-    { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> }, // 👈 เพิ่มตรงนี้
+    { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> },
+    { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-yellow-500" /> }, // 👈 ใหม่: แสดงให้ทุกคนเห็น
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
     { name: 'Moments', path: '/moments', icon: <ImageIcon size={20} className="text-sky-500" /> },

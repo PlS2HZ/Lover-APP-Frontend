@@ -17,6 +17,7 @@ import GameSession from './pages/GameSession';
 import CreateLevel from './pages/CreateLevel';
 import BotGameSession from './pages/BotGameSession';
 import MemoryQuizPage from './pages/MemoryQuizPage';
+import GangQuizPage from './pages/GangQuizPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -143,6 +144,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MemoryQuizPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gang-quiz"
+            element={
+              <ProtectedRoute>
+                <GangQuizPage />
               </ProtectedRoute>
             }
           />
