@@ -109,9 +109,11 @@ const GangQuizPage = () => {
     }, []);
 
     const handleAnswer = useCallback((optionIndex) => {
-        if (!quiz) return;
+        if (!quiz || loading) return; // ป้องกันการจิ้มซ้ำตอนกำลังโหลด
+        
         const isCorrect = optionIndex === quiz.answer_index;
         
+        // 1. บันทึกคำตอบทันที
         const currentAnswer = { 
             playerIndex: currentPlayerIndex, 
             isCorrect, 
@@ -123,58 +125,58 @@ const GangQuizPage = () => {
         const updatedRoundAnswers = [...roundAnswers, currentAnswer];
         setRoundAnswers(updatedRoundAnswers);
 
-        // ✅ อัปเดตสถิติพื้นฐาน: ถูก + ผิด = 1 ข้อเสมอ
+        // 2. อัปเดตคะแนน
         setPlayers(prev => {
             const updated = [...prev];
             const player = { ...updated[currentPlayerIndex] };
-            
             if (isCorrect) {
                 player.score += 1;
-                // ✅ ได้ไอเทมเฉพาะเมื่อตอบถูกจริงเท่านั้น
                 giveRandomItem(currentPlayerIndex);
             } else {
                 player.wrong += 1;
-                if (isShieldActive) {
-                    player.shieldSaves += 1; 
-                }
+                if (isShieldActive) player.shieldSaves += 1; 
             }
             updated[currentPlayerIndex] = player;
             return updated;
         });
 
-        // ✅ [แก้ไขจุดที่ 1] ล้างสถานะ Focus/Hover บนมือถือให้หายขาด
+        // ✅ [แก้ไขจุดที่ 1] ล้างสถานะกรอบเหลืองทันทีที่จิ้ม
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
-        // บังคับให้ Window เลิกสนใจการคลิกค้าง
         window.getSelection()?.removeAllRanges();
 
-        if (currentPlayerIndex < players.length - 1) {
-            // ✅ [แก้ไขจุดที่ 2] บังคับ Re-render ส่วนของปุ่มเพื่อล้างสี Highlight ของระบบมือถือ
-            setCurrentPlayerIndex(prev => prev + 1);
-            setHiddenOptions([]); 
-            setShowGoldenHint(false); 
-            setIsShieldActive(false); 
-            setTargetVictim(null); 
-            setSelectedItem(null);
-        } else {
-            setPlayers(currentPlayers => {
-                const finalUpdated = [...currentPlayers];
-                updatedRoundAnswers.forEach(ans => {
-                    if (ans.bombTarget) {
-                        const victimIdx = finalUpdated.findIndex(p => p.name === ans.bombTarget);
-                        const victimAns = updatedRoundAnswers.find(a => a.playerIndex === victimIdx);
-                        // โล่เขียวกันระเบิดได้ 100%
-                        if (victimAns && !victimAns.isCorrect && !victimAns.usedShield) {
-                            finalUpdated[victimIdx].bombHits += 1; 
+        // ✅ [แก้ไขจุดที่ 2] หน่วงเวลา 0.5 วินาทีเพื่อให้เห็นกรอบแวบนึง แล้วค่อยสลับคน
+        setTimeout(() => {
+            if (currentPlayerIndex < players.length - 1) {
+                // สลับคิวให้คนถัดไป
+                setCurrentPlayerIndex(prev => prev + 1);
+                // ล้างสถานะไอเทมของคนเดิม
+                setHiddenOptions([]); 
+                setShowGoldenHint(false); 
+                setIsShieldActive(false); 
+                setTargetVictim(null); 
+                setSelectedItem(null);
+            } else {
+                // ถ้าครบทุกคนแล้ว ให้ไปหน้า Review
+                setPlayers(currentPlayers => {
+                    const finalUpdated = [...currentPlayers];
+                    updatedRoundAnswers.forEach(ans => {
+                        if (ans.bombTarget) {
+                            const victimIdx = finalUpdated.findIndex(p => p.name === ans.bombTarget);
+                            const victimAns = updatedRoundAnswers.find(a => a.playerIndex === victimIdx);
+                            if (victimAns && !victimAns.isCorrect && !victimAns.usedShield) {
+                                finalUpdated[victimIdx].bombHits += 1; 
+                            }
                         }
-                    }
+                    });
+                    return finalUpdated;
                 });
-                return finalUpdated;
-            });
-            setGameState('review');
-        }
-    }, [quiz, currentPlayerIndex, players, isShieldActive, targetVictim, roundAnswers, giveRandomItem]);
+                setGameState('review');
+            }
+        }, 500); // ⏱️ 0.5 วินาทีตามคำสั่งนาย
+
+    }, [quiz, currentPlayerIndex, players, isShieldActive, targetVictim, roundAnswers, giveRandomItem, loading]);
 
     const getItemInfo = (type) => {
         const info = {
@@ -219,11 +221,18 @@ const GangQuizPage = () => {
                         <div className="bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 text-center font-black">
                             <label className="text-[9px] uppercase text-slate-400 block mb-2 font-black">หมวดหมู่</label>
                             <select value={category} onChange={(e) => setCategory(e.target.value)} className="bg-transparent text-[10px] text-yellow-400 outline-none cursor-pointer font-black">
-                                <option value="ความรู้รอบตัว">🌏 ความรู้รอบตัว</option>
-                                <option value="ประวัติศาสตร์กวนๆ">📜 ประวัติศาสตร์</option>
-                                <option value="วิทยาศาสตร์น่ารู้">🧪 วิทยาศาสตร์</option>
-                                <option value="บันเทิงและดารา">🎬 บันเทิง/ดารา</option>
-                            </select>
+    <option value="ความรู้รอบตัว">🌏 ความรู้รอบตัว</option>
+    <option value="วิทยาศาสตร์น่ารู้">🧪 วิทยาศาสตร์</option>
+    <option value="ประวัติศาสตร์กวนๆ">📜 ประวัติศาสตร์</option>
+    <option value="บันเทิงและดารา">🎬 บันเทิง/ดารา</option>
+    {/* ✨ หมวดหมู่ใหม่ที่เพิ่มขึ้นมา ✨ */}
+    <option value="ภูมิศาสตร์โลก">🗺️ ภูมิศาสตร์และสถานที่</option>
+    <option value="กีฬาและสถิติกีฬา">⚽ กีฬาและสถิติโลก</option>
+    <option value="เทคโนโลยีและนวัตกรรม">💻 เทคโนโลยี/AI</option>
+    <option value="อาหารและวัฒนธรรม">🍕 อาหาร/วัฒนธรรมนานาชาติ</option>
+    <option value="สัตว์โลกน่ารัก">🦁 สัตว์และธรรมชาติ</option>
+    <option value="แบรนด์ดังระดับโลก">🛍️ ธุรกิจและแบรนด์ดัง</option>
+</select>
                         </div>
                     </div>
                     <button onClick={async () => { setPlayers(players.map(p=>({...p, score:0, wrong:0, shieldSaves:0, bombHits:0}))); setPlayedQuestions([]); setCurrentQuestionIndex(0); await startNewRound(); }} disabled={loading} className="w-full py-5 bg-yellow-400 text-slate-900 rounded-[2rem] font-black uppercase italic shadow-lg active:scale-95 transition-all font-black">เริ่มสงครามลูกอม ✨</button>
