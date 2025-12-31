@@ -1,10 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-    Heart, Clock, Trash2, Users, Calendar as CalendarIcon, 
-    Sparkles, Camera, Image as ImageIcon, Loader2, X 
-} from 'lucide-react';
+import { Heart, Clock, Trash2, User, Calendar as CalendarIcon, Sparkles, Camera, Loader2, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import MoodCalendar from './MoodCalendar';
 import MoodInsight from './MoodInsight';
@@ -25,6 +22,7 @@ const MoodPage = () => {
     const [uploading, setUploading] = useState(false);
     const [moodHistory, setMoodHistory] = useState([]);
     const [users, setUsers] = useState([]);
+    const [userMap, setUserMap] = useState({}); // ✅ Map ID เป็น Username
     const [visibleTo, setVisibleTo] = useState([]);
     const [showCalendar, setShowCalendar] = useState(false);
     const [showInsight, setShowInsight] = useState(false);
@@ -39,7 +37,9 @@ const MoodPage = () => {
             const res = await axios.get(`${API_URL}/api/users`);
             const otherUsers = res.data.filter(u => u.id !== userId);
             setUsers(otherUsers);
-            // Default ให้ส่งหาทุกคนที่เป็นเพื่อน/แฟน
+            const map = {};
+            res.data.forEach(u => map[u.id] = u.username);
+            setUserMap(map);
             setVisibleTo(otherUsers.map(u => u.id));
         } catch (err) { console.error(err); }
     };
@@ -76,21 +76,13 @@ const MoodPage = () => {
         } catch (err) { alert('บันทึกไม่สำเร็จ'); } finally { setLoading(false); }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("ลบความทรงจำนี้ใช่ไหม?")) return;
-        try {
-            await axios.delete(`${API_URL}/api/mood/delete?id=${id}`);
-            fetchMoodHistory();
-        } catch (err) { alert("ลบไม่สำเร็จ"); }
-    };
-
     return (
         <div className="min-h-screen bg-rose-50/30 p-6 pb-24 font-bold text-slate-700">
-            <div className="max-w-md mx-auto space-y-6">
+            <div className="max-w-md mx-auto space-y-6 text-center">
                 <header className="flex justify-between items-center">
                     <div className="flex-1 text-center pl-10">
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter">Our Mood</h1>
-                        <p className="text-[10px] text-rose-400 uppercase tracking-widest font-black">Emotions & Moments</p>
+                        <p className="text-[10px] text-rose-400 uppercase tracking-widest font-black text-center">Emotions & Moments</p>
                     </div>
                     <div className="flex gap-2">
                         <button onClick={() => setShowInsight(true)} className="p-3 bg-white shadow-md rounded-2xl text-purple-500 border border-purple-50"><Sparkles size={20} /></button>
@@ -109,11 +101,11 @@ const MoodPage = () => {
                 </div>
 
                 <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border-2 border-rose-100/50 space-y-4">
-                    <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="รายละเอียดความรู้สึกวันนี้..." className="w-full h-20 text-sm focus:outline-none resize-none bg-transparent font-bold" />
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="รายละเอียดวันนี้..." className="w-full h-20 text-sm focus:outline-none resize-none bg-transparent font-bold" />
                     <div className="relative aspect-video bg-slate-50 rounded-3xl border-2 border-dashed border-rose-100 flex items-center justify-center overflow-hidden">
                         {imageUrl ? (
                             <>
-                                <img src={imageUrl} className="w-full h-full object-cover" alt="preview" />
+                                <img src={imageUrl} className="w-full h-full object-cover" alt="" />
                                 <button onClick={() => setImageUrl('')} className="absolute top-2 right-2 p-1 bg-rose-500 text-white rounded-full"><X size={14}/></button>
                             </>
                         ) : (
@@ -124,23 +116,13 @@ const MoodPage = () => {
                             </label>
                         )}
                     </div>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        <label className="text-[9px] font-black text-slate-300 uppercase w-full">แชร์ให้ใครบ้าง:</label>
-                        {users.map(u => (
-                            <button key={u.id} onClick={() => setVisibleTo(prev => prev.includes(u.id) ? prev.filter(x => x !== u.id) : [...prev, u.id])}
-                                className={`px-3 py-1.5 rounded-xl text-[9px] font-black border-2 transition-all ${visibleTo.includes(u.id) ? 'bg-rose-500 border-rose-500 text-white' : 'bg-slate-50 border-transparent text-slate-400'}`}>
-                                {u.username}
-                            </button>
-                        ))}
-                    </div>
                 </div>
 
                 <button onClick={handleSave} disabled={loading || uploading} className="w-full py-5 bg-rose-500 text-white rounded-[2rem] font-black uppercase italic shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
                     {loading ? 'กำลังบันทึก...' : <><Heart size={18} fill="currentColor"/> บันทึก Mood & Moment ✨</>}
                 </button>
 
-                {/* ✅ ประวัติล่าสุด: แยกฝั่ง ซ้าย (คนอื่น) - ขวา (ฉัน) */}
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4 pt-4 text-left">
                     <h3 className="text-xs font-black text-slate-400 uppercase flex items-center gap-2 ml-2"><Clock size={14}/> ประวัติล่าสุด</h3>
                     <div className="space-y-4">
                         {moodHistory.slice(0, 20).map((item) => {
@@ -153,20 +135,14 @@ const MoodPage = () => {
                                                 {item.mood_emoji}
                                             </div>
                                             <div className={`flex-1 min-w-0 ${isMine ? 'text-right' : 'text-left'}`}>
-                                                <p className="text-[9px] font-black text-slate-400">
-                                                    {isMine ? 'ฉัน' : 'คนอื่น'} • {new Date(item.created_at).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                                    {isMine ? 'ฉัน' : (userMap[item.user_id] || item.user_id)} • {new Date(item.created_at).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                                 <p className="text-xs font-bold text-slate-600 break-words">{item.mood_text}</p>
                                             </div>
-                                            {isMine && (
-                                                <button onClick={() => handleDelete(item.id)} className="p-1 text-rose-200 hover:text-rose-400 self-center">
-                                                    <Trash2 size={14}/>
-                                                </button>
-                                            )}
+                                            {isMine && <button onClick={() => axios.delete(`${API_URL}/api/mood/delete?id=${item.id}`).then(fetchMoodHistory)} className="p-1 text-rose-200 hover:text-rose-400 self-center"><Trash2 size={14}/></button>}
                                         </div>
-                                        {item.image_url && (
-                                            <img src={item.image_url} className="w-full h-40 object-cover rounded-2xl border border-slate-50 shadow-inner" alt="moment" />
-                                        )}
+                                        {item.image_url && <img src={item.image_url} className="w-full h-40 object-cover rounded-2xl border border-slate-50 shadow-inner" alt="" />}
                                     </div>
                                 </div>
                             );
