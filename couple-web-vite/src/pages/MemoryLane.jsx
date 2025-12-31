@@ -45,12 +45,11 @@ const MemoryLane = () => {
 
   useEffect(() => { fetchMemories(); }, [fetchMemories]);
 
-  // ✅ 1. ปรับ Scroll ให้ไวขึ้น (เพิ่มจาก 1px เป็น 2px และปรับเวลาให้เร็วขึ้น)
   useEffect(() => {
     if (isStarted && !loading && isAutoScrolling) {
       const timer = setInterval(() => { 
         window.scrollBy({ top: 2, behavior: 'auto' }); 
-      }, 25); // ปรับจาก 35ms เป็น 25ms เพื่อความลื่นไหลและรวดเร็ว
+      }, 25); 
       return () => clearInterval(timer);
     }
   }, [isStarted, loading, isAutoScrolling]);
@@ -146,7 +145,7 @@ const MemoryLane = () => {
       </AnimatePresence>
 
       <div className="max-w-5xl mx-auto py-60 px-6 relative z-10">
-        <header className="h-[80vh] flex flex-col justify-center items-center text-center mb-40"> {/* ✅ 2. ลดความสูง Header ลง */}
+        <header className="h-[80vh] flex flex-col justify-center items-center text-center mb-40"> 
             <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 2.5 }}>
                 <Star className="text-pink-500 mx-auto mb-10 animate-spin-slow shadow-[0_0_30px_rgba(219,39,119,0.6)]" size={56} />
                 <h2 className="text-[7.5vw] md:text-7xl font-serif italic text-white/95 px-6 leading-[1.6] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
@@ -168,7 +167,6 @@ const MemoryLane = () => {
                 whileInView={{ opacity: 1, scale: 1, y: 0 }} 
                 viewport={{ once: true, margin: "-100px" }} 
                 transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-                // ✅ 3. ลด margin-bottom จาก 35vh เป็น 20vh เพื่อลดช่วงว่างสีดำระหว่างรูป
                 className={`relative mb-[20vh] flex flex-col ${index % 2 === 0 ? 'md:items-start' : 'md:items-end'} items-center`}
             >
               <div className="absolute -left-[6px] md:left-1/2 md:-translate-x-1/2 top-0 w-4 h-4 bg-white rounded-full z-20 shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
@@ -185,23 +183,31 @@ const MemoryLane = () => {
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 opacity-90" />
                   
-                  <div className="absolute bottom-0 left-0 right-0 p-10 md:p-14">
+                  <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14 z-10"> {/* ✅ เพิ่ม Padding และ Z-index */}
                     <motion.div 
                         initial={{ x: -20, opacity: 0 }}
                         whileInView={{ x: 0, opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
-                        className="space-y-6"
+                        className="space-y-4 md:space-y-6"
                     >
-                        <span className="text-7xl block drop-shadow-2xl filter brightness-125">{item.mood_emoji}</span>
-                        <div>
-                            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-pink-500 mb-3">Captured by {userMap[item.user_id] || 'Lover'}</p>
-                            <p className="text-[7.5vw] md:text-4xl font-black italic text-white leading-[1.5] drop-shadow-2xl tracking-tight">
+                        <span className="text-5xl md:text-7xl block drop-shadow-2xl filter brightness-125">{item.mood_emoji}</span>
+                        <div className="relative"> {/* ✅ เพิ่ม Container เพื่อจัดระเบียบข้อความ */}
+                            <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-pink-500 mb-2 md:mb-3 drop-shadow-md">
+                                Captured by {userMap[item.user_id] || 'Lover'}
+                            </p>
+                            
+                            {/* ✅ ปรับฟอนต์ภาษาไทยให้เล็กลงในมือถือ (จาก 7.5vw เป็น 6.5vw) เพื่อให้อยู่ในรูป */}
+                            <p className="text-[6.5vw] md:text-4xl font-black italic text-white leading-[1.3] md:leading-[1.5] drop-shadow-2xl tracking-tight break-words pr-4">
                                 {item.mood_text.replace('Surprise ', '')}
                             </p>
-                            <div className="w-20 h-1.5 bg-pink-600/40 rounded-full mt-8 shadow-[0_0_15px_rgba(219,39,119,0.3)]" />
-                            <p className="text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mt-5 italic">
+
+                            <div className="w-16 md:w-20 h-1 bg-pink-600/40 rounded-full mt-6 md:mt-8 shadow-[0_0_15px_rgba(219,39,119,0.3)]" />
+                            
+                            {/* 🗓️ ส่วนของเวลา (ตอนนี้คอมเมนต์ออกไว้ หากจะเอากลับมา ให้ลบ {/* และ */}
+                            {/* <p className="text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mt-5 italic">
                                 {new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                             </p>
+                            */}
                         </div>
                     </motion.div>
                   </div>
@@ -211,7 +217,7 @@ const MemoryLane = () => {
           ))}
         </div>
 
-        <footer ref={footerRef} className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20"> {/* ✅ 4. ลด pt-40 เป็น pt-20 */}
+        <footer ref={footerRef} className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20"> 
           <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 2.5 }} className="space-y-16">
             <Heart size={100} className="fill-pink-600 text-pink-600 mx-auto animate-pulse shadow-pink-500/60" />
             <div className="space-y-10">
