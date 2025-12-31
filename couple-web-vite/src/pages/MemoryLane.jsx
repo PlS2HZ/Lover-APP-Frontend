@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { motion, useScroll, useSpring, AnimatePresence, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Sparkles, ChevronDown, Music, Volume2, VolumeX, Star, ArrowDownToLine } from 'lucide-react';
+import { Heart, Sparkles, ChevronDown, Music, Volume2, VolumeX, Star, FastForward } from 'lucide-react'; // ✅ เปลี่ยนไอคอน
 
 const MemoryLane = () => {
   // ✍️ ข้อความเดิมของนาย (ห้ามแก้ไขตามสั่ง 100%)
@@ -20,8 +20,11 @@ const MemoryLane = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true); 
+  const [currentIndex, setCurrentIndex] = useState(0); // ✅ เก็บตำแหน่งปัจจุบันว่าดูถึงรูปไหนแล้ว
+  
   const audioRef = useRef(null);
   const footerRef = useRef(null);
+  const memoryRefs = useRef([]); // ✅ เก็บ Ref ของทุกรูปภาพ
   const navigate = useNavigate();
 
   const { scrollYProgress } = useScroll();
@@ -48,8 +51,8 @@ const MemoryLane = () => {
   useEffect(() => {
     if (isStarted && !loading && isAutoScrolling) {
       const timer = setInterval(() => { 
-        window.scrollBy({ top: 2, behavior: 'auto' }); 
-      }, 25); 
+        window.scrollBy({ top: 3, behavior: 'auto' }); 
+      }, 20); 
       return () => clearInterval(timer);
     }
   }, [isStarted, loading, isAutoScrolling]);
@@ -69,11 +72,27 @@ const MemoryLane = () => {
     }, 100);
   };
 
-  const scrollToFinale = () => {
-    setIsAutoScrolling(false);
+  // ✅ ฟังก์ชัน Fast Forward: ข้ามทีละสเต็ป
+  const handleFastForward = () => {
+    const step = 100; // 📍 แก้ไขจำนวนรูปที่จะให้ข้ามตรงนี้ (เช่น 50, 100, 200)
+    let nextIndex = currentIndex + step;
+
+    setIsAutoScrolling(false); // 1. หยุดไหลก่อน
+
+    if (nextIndex >= memories.length) {
+      // ถ้าข้ามจนเลยรูปสุดท้าย ให้ไปที่หน้าฉากจบเลย
+      footerRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setCurrentIndex(memories.length);
+    } else {
+      // ข้ามไปตาม Step ที่ตั้งไว้
+      memoryRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth' });
+      setCurrentIndex(nextIndex);
+    }
+
+    // 2. หยุดรอให้รูปโหลด 1.5 วินาที แล้วค่อยเริ่มไหลต่อเพื่อลดการกระตุก
     setTimeout(() => {
-      footerRef.current?.scrollIntoView({ behavior: 'smooth' }); 
-    }, 100);
+      setIsAutoScrolling(true);
+    }, 1500);
   };
 
   if (loading) return (
@@ -162,10 +181,12 @@ const MemoryLane = () => {
           {memories.map((item, index) => (
             <motion.div 
                 key={item.id} 
+                ref={el => memoryRefs.current[index] = el} // ✅ ผูก Ref ให้แต่ละรูป
                 style={{ rotate: index % 2 === 0 ? 1.5 : -1.5 }}
                 initial={{ opacity: 0, scale: 0.9, y: 150 }} 
                 whileInView={{ opacity: 1, scale: 1, y: 0 }} 
                 viewport={{ once: true, margin: "-100px" }} 
+                onViewportEnter={() => setCurrentIndex(index)} // ✅ อัปเดตตำแหน่งปัจจุบันเวลาไหลผ่าน
                 transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
                 className={`relative mb-[20vh] flex flex-col ${index % 2 === 0 ? 'md:items-start' : 'md:items-end'} items-center`}
             >
@@ -178,36 +199,28 @@ const MemoryLane = () => {
                     transition={{ duration: 2 }}
                     src={item.image_url} 
                     className="w-full h-auto object-cover max-h-[850px] opacity-85 group-hover:opacity-100 transition-all duration-1000" 
-                    loading="lazy" 
+                    // ❌ ถอด lazy loading ออกเพื่อให้วาร์ปแล้วติดเร็วขึ้น
                   />
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 opacity-90" />
                   
-                  <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14 z-10"> {/* ✅ เพิ่ม Padding และ Z-index */}
+                  <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14 z-10"> 
                     <motion.div 
                         initial={{ x: -20, opacity: 0 }}
                         whileInView={{ x: 0, opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
                         className="space-y-4 md:space-y-6"
                     >
-                        <span className="text-5xl md:text-7xl block drop-shadow-2xl filter brightness-125">{item.mood_emoji}</span>
-                        <div className="relative"> {/* ✅ เพิ่ม Container เพื่อจัดระเบียบข้อความ */}
+                        <div className="relative"> 
                             <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-pink-500 mb-2 md:mb-3 drop-shadow-md">
                                 Captured by {userMap[item.user_id] || 'Lover'}
                             </p>
                             
-                            {/* ✅ ปรับฟอนต์ภาษาไทยให้เล็กลงในมือถือ (จาก 7.5vw เป็น 6.5vw) เพื่อให้อยู่ในรูป */}
                             <p className="text-[6.5vw] md:text-4xl font-black italic text-white leading-[1.3] md:leading-[1.5] drop-shadow-2xl tracking-tight break-words pr-4">
                                 {item.mood_text.replace('Surprise ', '')}
                             </p>
 
                             <div className="w-16 md:w-20 h-1 bg-pink-600/40 rounded-full mt-6 md:mt-8 shadow-[0_0_15px_rgba(219,39,119,0.3)]" />
-                            
-                            {/* 🗓️ ส่วนของเวลา (ตอนนี้คอมเมนต์ออกไว้ หากจะเอากลับมา ให้ลบ {/* และ */}
-                            {/* <p className="text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mt-5 italic">
-                                {new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                            </p>
-                            */}
                         </div>
                     </motion.div>
                   </div>
@@ -234,12 +247,13 @@ const MemoryLane = () => {
         </footer>
       </div>
 
+      {/* 🚀 ปุ่ม Fast Forward ข้ามทีละ 100 รูป */}
       <button 
-        onClick={scrollToFinale}
+        onClick={handleFastForward}
         className="fixed bottom-10 left-10 z-[100] flex items-center gap-3 px-6 py-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full text-white/50 hover:text-white hover:bg-pink-600/20 transition-all shadow-2xl group"
       >
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] hidden md:block">Skip to Finale</span>
-        <ArrowDownToLine size={20} className="group-hover:translate-y-1 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] hidden md:block">Fast Forward</span>
+        <FastForward size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
 
       <div className="fixed bottom-10 right-10 z-[100] flex items-center gap-6">
