@@ -59,6 +59,7 @@ const Navbar = () => {
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
     { name: 'Request', path: '/create', icon: <Send size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
+    { name: 'Memory Lane', path: '/memory-lane', icon: <ImageIcon size={20} className="text-indigo-500" /> },
     { name: 'Profile', path: '/profile', icon: <UserIcon size={20} className="text-slate-500" /> },
   ];
 

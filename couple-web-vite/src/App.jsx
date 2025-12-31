@@ -17,6 +17,7 @@ import CreateLevel from './pages/CreateLevel';
 import BotGameSession from './pages/BotGameSession';
 import MemoryQuizPage from './pages/MemoryQuizPage';
 import GangQuizPage from './pages/GangQuizPage';
+import MemoryLane from './pages/MemoryLane';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -143,6 +144,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <GangQuizPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/memory-lane"
+            element={
+              <ProtectedRoute>
+                <MemoryLane />
               </ProtectedRoute>
             }
           />
