@@ -51,16 +51,16 @@ const Navbar = () => {
 
   // ✅ เพิ่มเมนู Gang Quiz และ Memory Quiz
   const navItems = [
-    { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
-    { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> },
-    { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-yellow-500" /> }, // 👈 ใหม่: แสดงให้ทุกคนเห็น
-    { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
-    { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
+    { name: 'Profile', path: '/profile', icon: <UserIcon size={20} className="text-slate-500" /> },
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
     { name: 'Request', path: '/create', icon: <Send size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
     { name: 'Memory Lane', path: '/memory-lane', icon: <ImageIcon size={20} className="text-indigo-500" /> },
-    { name: 'Profile', path: '/profile', icon: <UserIcon size={20} className="text-slate-500" /> },
+    { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
+    { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
+    { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
+    { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> },
+    { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-yellow-500" /> }, // 👈 ใหม่: แสดงให้ทุกคนเห็น
   ];
 
   const themeColors = {
