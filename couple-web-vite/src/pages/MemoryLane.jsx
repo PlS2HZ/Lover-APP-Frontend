@@ -7,12 +7,12 @@ import { Heart, Sparkles, ChevronDown, Music, Volume2, VolumeX, Star } from 'luc
 
 const MemoryLane = () => {
   // ✍️ แก้ไขข้อความได้ที่นี่เลยครับนาย
-  const headerTitle = "THE UNFORGETTABLE YEAR"; 
-  const headerSub = "ร้อยเรียงทุกความทรงจำ... ตลอด 365 วันที่มีเธอ"; 
-  const journeyQuote = "ในทุกๆ ก้าวที่เราเดินเคียงข้างกัน ฉันบันทึกความสุขเอาไว้ในนี้ทั้งหมดเลยนะ...";
+  const headerTitle = "Memories Forever."; 
+  const headerSub = "ความทรงจำของกันและกัน... ตลอด 1275 วันที่มีหนู"; 
+  const journeyQuote = "ในทุกๆ วันที่เราอยู่เคียงข้างกัน พี่มีความสุขมากๆเลยนะ...";
   const footerTitle = "HAPPY NEW YEAR"; 
   const footerMain = "2026 WITH YOU"; 
-  const footerSub = "ขอบคุณที่อยู่ด้วยกันมาตลอดปีนะ ปีหน้าและปีต่อๆ ไป ก็ขอให้มีกันแบบนี้ตลอดไปนะครับคนเก่ง ❤️";
+  const footerSub = "ขอบคุณที่อยู่ด้วยกันมาตลอดปีและตลออดไปเลยนะ ปีหน้าและปีต่อๆ ไป ก็ขอให้มีกันแบบนี้ตลอดไปนะครับคนเก่ง ❤️";
 
   const [memories, setMemories] = useState([]);
   const [userMap, setUserMap] = useState({});
