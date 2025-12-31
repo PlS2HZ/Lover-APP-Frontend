@@ -10,7 +10,6 @@ import CalendarPage from './pages/CalendarPage';
 import ProfilePage from './pages/ProfilePage';
 import MoodPage from './pages/MoodPage';
 import WishlistPage from './pages/WishlistPage';
-import MomentPage from './pages/MomentPage';
 import HomeAdminPage from './pages/HomeAdminPage';
 import MindGame from './pages/MindGame';
 import GameSession from './pages/GameSession';
@@ -88,14 +87,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <WishlistPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/moments"
-            element={
-              <ProtectedRoute>
-                <MomentPage />
               </ProtectedRoute>
             }
           />

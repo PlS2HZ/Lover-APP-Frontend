@@ -56,7 +56,6 @@ const Navbar = () => {
     { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-yellow-500" /> }, // 👈 ใหม่: แสดงให้ทุกคนเห็น
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
-    { name: 'Moments', path: '/moments', icon: <ImageIcon size={20} className="text-sky-500" /> },
     { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
     { name: 'Request', path: '/create', icon: <Send size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
