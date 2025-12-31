@@ -69,9 +69,10 @@ const MemoryLane = () => {
       <motion.div className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-pink-600 via-white to-pink-600 origin-left z-[100]" style={{ scaleX }} />
       
       {/* 🎵 ลิ้งก์เพลง (นายเปลี่ยนลิ้งก์ .mp3 ที่ได้จาก Storage ที่นี่นะ) */}
-      <audio ref={audioRef} loop>
-        <source src="https://xqmvmryebvmyariewpvr.supabase.co/storage/v1/object/public/memories_mood_moment/-%20Bow%20Kanyarat%20x%20marr%20team%20_%20%20marr%20EP10.mp3" type="audio/mpeg" />
-      </audio>
+      <audio ref={audioRef} loop preload="auto">
+  <source src="https://xqmvmryebvmyariewpvr.supabase.co/storage/v1/object/public/memories_mood_moment/-%20Bow%20Kanyarat%20x%20marr%20team%20_%20%20marr%20EP10.mp3" type="audio/mpeg" />
+  Your browser does not support the audio element.
+</audio>
 
       {/* ✨ Star Background */}
       <div className="fixed inset-0 pointer-events-none opacity-25">
