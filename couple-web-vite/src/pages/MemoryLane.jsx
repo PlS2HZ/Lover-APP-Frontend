@@ -51,8 +51,8 @@ const MemoryLane = () => {
   useEffect(() => {
     if (isStarted && !loading && isAutoScrolling) {
       const timer = setInterval(() => { 
-        window.scrollBy({ top: 3, behavior: 'auto' }); 
-      }, 20); 
+        window.scrollBy({ top: 2, behavior: 'auto' }); 
+      }, 15); 
       return () => clearInterval(timer);
     }
   }, [isStarted, loading, isAutoScrolling]);
@@ -199,7 +199,7 @@ const MemoryLane = () => {
                     transition={{ duration: 2 }}
                     src={item.image_url} 
                     className="w-full h-auto object-cover max-h-[850px] opacity-85 group-hover:opacity-100 transition-all duration-1000" 
-                    // ❌ ถอด lazy loading ออกเพื่อให้วาร์ปแล้วติดเร็วขึ้น
+  style={{ willChange: 'transform' }}
                   />
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 opacity-90" />
