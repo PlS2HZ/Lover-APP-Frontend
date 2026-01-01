@@ -56,12 +56,19 @@ const MemoryDetail = () => {
   const { scrollYProgress } = useScroll(); // จับตำแหน่งการ Scroll (0-1)
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 }); // Animation แถบ Progress Bar
 
-  // Effect: ตั้งค่าหน้าจอเมื่อเข้ามาครั้งแรก
+  // ✅ แก้ไขการซ่อน Navbar ในหน้า Detail
   useEffect(() => {
-    const navbar = document.querySelector('nav');
-    if (navbar) navbar.style.display = 'none'; // ซ่อน Navbar
-    window.scrollTo(0, 0); // เลื่อนไปบนสุดเสมอ
-    return () => { if (navbar) navbar.style.display = 'flex'; }; // คืนค่า Navbar เมื่อออก
+    const style = document.createElement('style');
+    style.id = 'hide-navbar-detail';
+    style.innerHTML = `nav { display: none !important; }`;
+    document.head.appendChild(style);
+    
+    window.scrollTo(0, 0);
+    
+    return () => { 
+        const styleElement = document.getElementById('hide-navbar-detail');
+        if (styleElement) styleElement.remove();
+    };
   }, []);
 
   // ฟังก์ชันโหลดรูปภาพล่วงหน้า (Preload) เพื่อให้เลื่อนแล้วรูปไม่กระพริบ
