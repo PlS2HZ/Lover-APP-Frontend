@@ -18,6 +18,7 @@ import BotGameSession from './pages/BotGameSession';
 import MemoryQuizPage from './pages/MemoryQuizPage';
 import GangQuizPage from './pages/GangQuizPage';
 import MemoryLane from './pages/MemoryLane';
+import MemoryDetail from './pages/MemoryDetail';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -152,6 +153,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MemoryLane />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/memory-detail"
+            element={
+              <ProtectedRoute>
+                <MemoryDetail />
               </ProtectedRoute>
             }
           />
