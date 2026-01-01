@@ -29,7 +29,7 @@ const MemoryLane = () => {
   // ข้อความหัวข้อและคำโปรย
   const titlePart1 = "Memories";
   const titlePart2 = "Forever.";
-  const headerSub = "ความทรงจำของกันและกัน... ตลอดเวลา 1275 วันที่มีหนูเข้ามาในชีวิตพี่ ❤️"; 
+  const headerSub = <>ความทรงจำของกันและกัน... <br /> ตลอดเวลา 1275 วันที่มีหนูเข้ามาในชีวิตพี่ ❤️</>; 
 
   // ✅ แก้ไขการซ่อน Navbar ให้เสถียรขึ้น
   useEffect(() => {
