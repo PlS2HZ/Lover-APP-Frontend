@@ -170,7 +170,7 @@ const MemoryDetail = () => {
       
       {/* Element เสียงเพลง */}
       <audio ref={audioRef} loop preload="auto" crossOrigin="anonymous">
-        <source src="https://xqmvmryebvmyariewpvr.supabase.co/storage/v1/object/public/memories_mood_moment/-%20Bow%20Kanyarat%20x%20marr%20team%20_%20%20marr%20EP10.mp3" type="audio/mpeg" />
+        <source src="https://xqmvmryebvmyariewpvr.supabase.co/storage/v1/object/public/memories_mood_moment/happy_new_year_2026/-%20Bow%20Kanyarat%20x%20marr%20team%20_%20%20marr%20EP10.mp3" type="audio/mpeg" />
       </audio>
 
       {/* ✅ อนุภาคฟุ้งกระจายชัดเจน (ดาว/หัวใจ) พื้นหลัง */}
