@@ -174,13 +174,13 @@ const MemoryLane = () => {
         <div className="relative flex flex-col items-center gap-2 md:gap-0">
             {/* Title ส่วนที่ 1: Memories */}
             <h1 className="text-[14vw] md:text-[9.5rem] font-black italic uppercase tracking-tighter leading-[1.1] md:leading-none self-start md:ml-20">
-                <span className={`text-transparent bg-clip-text bg-gradient-to-b ${isDarkMode ? 'from-white via-pink-100 to-pink-500' : 'from-[#111] via-pink-400 to-pink-600'} drop-shadow-[0_0_20px_rgba(219,39,119,0.3)]`}>
+                <span className={`text-transparent bg-clip-text bg-gradient-to-b pr-4 ${isDarkMode ? 'from-white via-pink-100 to-pink-500' : 'from-[#111] via-pink-400 to-pink-600'} drop-shadow-[0_0_20px_rgba(219,39,119,0.3)]`}>
                     {splitText(titlePart1, 0)}
                 </span>
             </h1>
             {/* Title ส่วนที่ 2: Forever. */}
             <h1 className="text-[14vw] md:text-[9.5rem] font-black italic uppercase tracking-tighter leading-[1.1] md:leading-none self-end md:mr-20 md:-mt-8">
-                <span className={`text-transparent bg-clip-text bg-gradient-to-b ${isDarkMode ? 'from-white via-pink-100 to-pink-500' : 'from-[#111] via-pink-400 to-pink-600'} drop-shadow-[0_0_20px_rgba(219,39,119,0.3)]`}>
+                <span className={`text-transparent bg-clip-text bg-gradient-to-b pr-4 ${isDarkMode ? 'from-white via-pink-100 to-pink-500' : 'from-[#111] via-pink-400 to-pink-600'} drop-shadow-[0_0_20px_rgba(219,39,119,0.3)]`}>
                     {splitText(titlePart2, titlePart1.length * 0.1)}
                 </span>
             </h1>
