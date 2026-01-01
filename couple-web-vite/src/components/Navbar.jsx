@@ -4,7 +4,7 @@ import axios from 'axios'; // เครื่องมือยิง API
 import { 
   Home, Calendar, Send, History, LogOut, 
   Heart, Gift, Image as ImageIcon, Menu, X, 
-  User as UserIcon, Gamepad2, Sparkles, Dices // ✅ นำเข้าไอคอนต่างๆ (Dices สำหรับ Gang Quiz)
+  User as UserIcon, Gamepad2, Sparkles, Dices // ✅ นำเข้าไอคอนต่างๆ
 } from 'lucide-react';
 import { useTheme } from '../ThemeConstants'; // Hook จัดการธีม
 
@@ -56,18 +56,17 @@ const Navbar = () => {
     }
   };
 
-  // ✅ กำหนดรายการเมนูทั้งหมด
+  // ✅ กำหนดรายการเมนูทั้งหมด (เพิ่มสีสันให้ไอคอนและลบ Profile ออก)
   const navItems = [
-    { name: 'Profile', path: '/profile', icon: <UserIcon size={20} className="text-slate-500" /> },
-    { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} /> },
-    { name: 'Request', path: '/create', icon: <Send size={20} /> },
-    { name: 'History', path: '/history', icon: <History size={20} /> },
+    { name: 'Calendar', path: '/calendar', icon: <Calendar size={20} className="text-blue-500" /> },
+    { name: 'Request', path: '/create', icon: <Send size={20} className="text-emerald-500" /> },
+    { name: 'History', path: '/history', icon: <History size={20} className="text-slate-500" /> },
     { name: 'Memory Lane', path: '/memory-lane', icon: <ImageIcon size={20} className="text-indigo-500" /> },
     { name: 'Mood', path: '/mood', icon: <Heart size={20} className="text-rose-500" /> },
     { name: 'Wishlist', path: '/wishlist', icon: <Gift size={20} className="text-amber-500" /> },
     { name: 'Mind Game', path: '/mind-game', icon: <Gamepad2 size={20} className="text-purple-500" /> },
     { name: 'Memory Quiz', path: '/memory-quiz', icon: <Sparkles size={20} className="text-pink-500" /> },
-    { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-yellow-500" /> }, // 👈 ใหม่: แสดงให้ทุกคนเห็น
+    { name: 'Gang Quiz', path: '/gang-quiz', icon: <Dices size={20} className="text-orange-500" /> },
   ];
 
   // กำหนดสีธีมของ Navbar (Home = ชมพู, New Year = เหลือง)
