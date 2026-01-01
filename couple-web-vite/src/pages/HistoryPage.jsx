@@ -1,81 +1,96 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { RefreshCw, Clock, User, CheckCircle, XCircle, Heart, Maximize2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react'; // นำเข้า React Hooks พื้นฐาน
+import axios from 'axios'; // เครื่องมือสำหรับยิง API ไปหา Backend
+import { RefreshCw, Clock, User, CheckCircle, XCircle, Heart, Maximize2, X } from 'lucide-react'; // นำเข้าไอคอนต่างๆ
+import { motion, AnimatePresence } from 'framer-motion'; // Library สำหรับทำ Animation
 
 const HistoryPage = () => {
+  // State: เก็บรายการคำขอ (Requests) ทั้งหมดที่ดึงมาจาก API
   const [requests, setRequests] = useState([]);
+  // State: สถานะ Loading ตอนเปิดหน้าเว็บ (True = กำลังโหลด)
   const [loading, setLoading] = useState(true);
+  // State: สถานะกำลังประมวลผล (เช่น ตอนกดอนุมัติ/ปฏิเสธ) เพื่อป้องกันการกดซ้ำ
   const [isProcessing, setIsProcessing] = useState(false);
+  // State: เก็บ Tab ที่เลือกอยู่ ('pending' = รออนุมัติ, 'history' = ประวัติย้อนหลัง)
   const [activeTab, setActiveTab] = useState('pending');
+  // State: เก็บ URL รูปภาพที่ถูกเลือก (เพื่อแสดง Modal รูปใหญ่)
   const [selectedImg, setSelectedImg] = useState(null);
+  // ดึง user_id ของผู้ใช้ปัจจุบันจาก LocalStorage
   const userId = localStorage.getItem('user_id');
 
-  // const API_URL = window.location.hostname === 'localhost'
-  //   ? 'http://localhost:10000'
-  //   : 'https://lover-app-jjoe.onrender.com';
+  // กำหนด API URL ตาม Environment (Localhost หรือ Production)
   const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:10000' 
         : 'https://lover-app-jjoe.onrender.com'; // ✅ ระบุไปเลยไม่ต้องเช็ค localhost  
+
+  // ฟังก์ชันดึงข้อมูลรายการคำขอ (ใช้ useCallback เพื่อไม่ให้สร้างฟังก์ชันใหม่ซ้ำๆ)
   const refreshList = useCallback(async (showSilent = false) => {
-    if (!userId) return;
-    if (!showSilent) setLoading(true);
+    if (!userId) return; // ถ้าไม่มี user_id ให้จบการทำงาน
+    if (!showSilent) setLoading(true); // ถ้าไม่ได้สั่งให้โหลดเงียบๆ ให้ขึ้น Loading
     try {
+      // ยิง API GET ไปที่ /api/my-requests พร้อมส่ง user_id และ timestamp (กัน Cache)
       const res = await axios.get(`${API_URL}/api/my-requests?user_id=${userId}&t=${Date.now()}`);
       if (Array.isArray(res.data)) {
+        // เรียงลำดับข้อมูลตามเวลาที่สร้าง (ใหม่สุดขึ้นก่อน)
         const sorted = res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        setRequests(sorted);
+        setRequests(sorted); // อัปเดต State
       }
     } catch (error) { 
       console.error("Refresh List Error:", error); 
     } finally { 
-      setLoading(false); 
+      setLoading(false); // ปิดสถานะ Loading
     }
   }, [userId, API_URL]);
 
+  // Effect: เรียก refreshList ทันทีที่ Component โหลดเสร็จ
   useEffect(() => { refreshList(); }, [refreshList]);
 
-  // ✅ แก้ไข: เพิ่ม Prompt สำหรับปุ่ม Approve และดักการกด Cancel
+  // ✅ ฟังก์ชันอัปเดตสถานะ (อนุมัติ/ปฏิเสธ)
   const updateStatus = async (id, newStatus) => {
-    if (isProcessing) return;
+    if (isProcessing) return; // ถ้ากำลังประมวลผลอยู่ ห้ามทำซ้ำ
     try {
-      let reason = "";
+      let reason = ""; // ตัวแปรเก็บเหตุผล/คอมเมนต์
 
       if (newStatus === 'rejected') {
+        // กรณีปฏิเสธ: บังคับให้ใส่เหตุผล
         reason = prompt("ระบุเหตุผลที่ไม่อนุมัติ:");
-        if (reason === null) return; // ✅ กด Cancel ไม่ทำอะไรต่อ
+        if (reason === null) return; // ✅ ถ้ากด Cancel ให้ยกเลิกการทำงาน
       } else if (newStatus === 'approved') {
-        // ✅ เพิ่ม Prompt สำหรับการอนุมัติ (ใส่หรือไม่ใส่ก็ได้)
+        // กรณีอนุมัติ: ถามคอมเมนต์เพิ่มเติม (ใส่หรือไม่ก็ได้)
         const input = prompt("ใส่คอมเมนต์ถึงแฟน (ไม่ใส่ให้กด OK ได้เลย):");
-        if (input === null) return; // ✅ กด Cancel ไม่ทำอะไรต่อ
-        reason = input; // ✅ ถ้ากด OK โดยไม่พิมพ์ จะได้ค่าว่างตามต้องการ
+        if (input === null) return; // ✅ ถ้ากด Cancel ให้ยกเลิกการทำงาน
+        reason = input; // ✅ ถ้ากด OK เฉยๆ จะได้ค่าว่าง
       }
 
-      setIsProcessing(true);
+      setIsProcessing(true); // เริ่มสถานะกำลังประมวลผล
+      // ยิง API POST เพื่ออัปเดตสถานะลง Database
       const res = await axios.post(`${API_URL}/api/update-status`, { id, status: newStatus, comment: reason });
 
       if (res.status === 200) {
-        alert(`ดำเนินการเรียบร้อย ✨`);
-        await refreshList(true);
+        alert(`ดำเนินการเรียบร้อย ✨`); // แจ้งเตือนสำเร็จ
+        await refreshList(true); // รีเฟรชข้อมูลใหม่แบบเงียบๆ (ไม่ขึ้น Loading ใหญ่)
       }
     } catch (err) {
       console.error("updateStatus ", err);
+      // กรณี Error (เช่น Network ช้า) แจ้งเตือนว่าระบบรับเรื่องแล้ว
       alert("ดำเนินการสำเร็จ (แจ้งเตือนจะส่งตามไปครับ) ✨");
       await refreshList(true);
-    } finally { setIsProcessing(false); }
+    } finally { setIsProcessing(false); } // จบสถานะประมวลผล
   };
 
+  // กรองรายการ "รออนุมัติ" (Pending): ต้องเป็นสถานะ pending และเราเป็นคนรับ (receiver_id ตรงกับเรา)
   const pendingList = requests.filter(r => 
     r.status === 'pending' && 
     String(r.receiver_id).toLowerCase() === String(userId).toLowerCase()
   );
   
+  // กรองรายการ "ประวัติ" (History): คือรายการที่เสร็จสิ้นแล้ว หรือ รายการที่เราเป็นคนส่งแล้วรอเขาอนุมัติ
   const historyList = requests.filter(r => 
     r.status !== 'pending' || 
     (r.status === 'pending' && String(r.sender_id).toLowerCase() === String(userId).toLowerCase())
   );
 
+  // แสดงหน้า Loading ถ้าข้อมูลยังไม่มา
   if (loading) return (
     <div className="flex flex-col justify-center items-center min-h-[60vh] space-y-4 text-rose-400 font-black italic px-4 text-center">
       <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-rose-500"></div>
@@ -86,6 +101,7 @@ const HistoryPage = () => {
   return (
     <div className="max-w-4xl mx-auto py-6 md:py-12 px-4 pb-24 font-sans min-h-screen bg-rose-50/20">
       
+      {/* Modal แสดงรูปภาพขยายใหญ่ (ใช้ AnimatePresence เพื่อทำ Animation ตอนเปิด/ปิด) */}
       <AnimatePresence>
         {selectedImg && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setSelectedImg(null)}>
@@ -95,13 +111,16 @@ const HistoryPage = () => {
         )}
       </AnimatePresence>
 
+      {/* Header ของหน้า */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl md:text-5xl font-black text-slate-800 italic uppercase tracking-tighter flex items-center gap-3">History 📋</h2>
+        {/* ปุ่ม Refresh ข้อมูล */}
         <button onClick={() => refreshList()} className="bg-white border-2 border-rose-100 p-3 rounded-2xl text-[10px] font-black flex items-center gap-2 text-rose-500 hover:shadow-lg transition-all active:scale-90">
           <RefreshCw size={16} className={isProcessing ? "animate-spin" : ""} /> REFRESH
         </button>
       </div>
 
+      {/* ปุ่มสลับ Tab (รออนุมัติ / ประวัติ) */}
       <div className="flex gap-2 mb-10 bg-white/80 backdrop-blur-sm p-2 rounded-[2rem] shadow-sm border border-rose-50 font-black text-xs md:text-sm">
         <button onClick={() => setActiveTab('pending')} className={`flex-1 py-5 rounded-[1.5rem] transition-all uppercase italic tracking-widest ${activeTab === 'pending' ? 'bg-rose-500 text-white shadow-xl scale-105' : 'text-slate-300'}`}>
           รออนุมัติ ({pendingList.length})
@@ -111,24 +130,31 @@ const HistoryPage = () => {
         </button>
       </div>
 
+      {/* List รายการการ์ด */}
       <div className="grid grid-cols-1 gap-8">
         <AnimatePresence mode="popLayout">
+          {/* เลือกแสดง List ตาม Tab ที่เลือก */}
           {(activeTab === 'pending' ? pendingList : historyList).map((item) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] shadow-2xl border-2 border-rose-50 relative overflow-hidden group">
+              {/* รูปหัวใจพื้นหลังตกแต่ง */}
               <div className="absolute -right-10 -bottom-10 text-rose-50/30 opacity-40 group-hover:rotate-12 transition-transform duration-700"><Heart size={250} fill="currentColor" /></div>
 
+              {/* ส่วนหัวการ์ด: ประเภทและสถานะ */}
               <div className="flex justify-between items-center mb-8 relative z-10">
                 <span className="font-black text-rose-500 text-[10px] uppercase bg-rose-50 px-6 py-2 rounded-full tracking-[0.2em] italic border border-rose-100">{item.category}</span>
+                {/* Badge สถานะ: เปลี่ยนสีตาม status */}
                 <div className={`px-6 py-2 rounded-full font-black text-[10px] uppercase italic tracking-widest shadow-sm border ${item.status === 'pending' ? 'bg-amber-50 text-amber-500 border-amber-100' : item.status === 'approved' ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-rose-50 text-rose-500 border-rose-100'}`}>
                   {item.status}
                 </div>
               </div>
               
+              {/* ชื่อรายการและเวลาที่สร้าง */}
               <h4 className="text-2xl md:text-4xl font-black text-slate-800 mb-2 relative z-10 uppercase italic tracking-tighter leading-none">{item.title}</h4>
               <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest mb-8 flex items-center gap-2 relative z-10 italic">
                 <Clock size={12} /> {new Date(item.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} · {new Date(item.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
               </p>
 
+              {/* แสดงรูปภาพ (ถ้ามี) */}
               {item.image_url && (
                 <div className="mb-10 relative z-10">
                   <div className="relative overflow-hidden rounded-[2.5rem] border-8 border-rose-50 shadow-inner aspect-video bg-slate-50">
@@ -138,15 +164,19 @@ const HistoryPage = () => {
                 </div>
               )}
 
+              {/* ส่วนรายละเอียดเนื้อหา */}
               <div className="bg-slate-50/80 backdrop-blur-sm p-8 rounded-[2.5rem] mb-8 space-y-5 relative z-10 border border-slate-100/50 shadow-inner">
+                {/* ผู้ส่ง */}
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-300 font-black uppercase italic tracking-widest flex items-center gap-2"><User size={14} /> From:</span>
                   <span className="text-rose-500 font-black text-sm uppercase italic tracking-tighter">{item.sender_name || "ใครบางคน"}</span>
                 </div>
+                {/* รายละเอียด/ระยะเวลา */}
                 <div className="pt-5 flex flex-col border-t border-slate-200/50">
                   <span className="text-[9px] text-slate-300 font-black uppercase tracking-[0.3em] mb-2 italic">⏱️ Activity Duration</span>
                   <span className="text-rose-500 font-black text-xl md:text-3xl uppercase italic tracking-tighter">{item.description}</span>
                 </div>
+                {/* แสดงคอมเมนต์ (เหตุผล) ถ้ามี */}
                 {item.comment && (
                   <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mt-5 p-5 bg-white rounded-[1.5rem] text-rose-600 text-xs font-bold italic border-l-8 border-rose-400 shadow-sm leading-relaxed">
                     💬 Reason: {item.comment}
@@ -154,6 +184,7 @@ const HistoryPage = () => {
                 )}
               </div>
 
+              {/* ปุ่ม Action (อนุมัติ/ปฏิเสธ): แสดงเฉพาะแท็บ Pending และเราเป็นคนรับเรื่อง */}
               {item.status === 'pending' && String(item.receiver_id) === String(userId) && (
                 <div className="flex flex-col md:flex-row gap-5 relative z-10 pt-4">
                   <button disabled={isProcessing} onClick={() => updateStatus(item.id, 'approved')} className={`flex-1 py-6 rounded-[2rem] font-black shadow-xl transition-all text-sm uppercase italic tracking-widest flex items-center justify-center gap-3 active:scale-95 ${isProcessing ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'}`}>
@@ -165,6 +196,7 @@ const HistoryPage = () => {
                 </div>
               )}
 
+              {/* เวลาที่ดำเนินการเสร็จสิ้น (ถ้าไม่ใช่ Pending) */}
               {item.status !== 'pending' && item.processed_at && (
                 <div className="flex items-center justify-center gap-3 text-[9px] font-black text-slate-300 uppercase italic tracking-[0.3em] mt-8 pt-6 border-t border-dashed border-slate-100 relative z-10">
                   <Clock size={12} /> {item.status === 'approved' ? 'Processed at' : 'Rejected at'}: {new Date(item.processed_at).toLocaleString('th-TH')}
@@ -175,6 +207,7 @@ const HistoryPage = () => {
         </AnimatePresence>
       </div>
 
+      {/* ข้อความเมื่อไม่มีรายการ */}
       {(activeTab === 'pending' ? pendingList : historyList).length === 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-40 bg-white rounded-[4rem] border-4 border-dashed border-rose-100 text-rose-200 font-black italic uppercase text-2xl shadow-inner tracking-tighter">
           ยังไม่มีเรื่องราวใหม่ๆ ✨

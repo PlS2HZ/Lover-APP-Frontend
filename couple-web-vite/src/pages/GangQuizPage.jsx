@@ -1,40 +1,60 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { UserPlus, UserMinus, CheckCircle2, XCircle, Shield, Eye, Bomb, Sparkles, HelpCircle, Trophy, Ghost, ArrowRight, Smartphone } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react'; // นำเข้า React Hooks พื้นฐาน
+import axios from 'axios'; // นำเข้า axios สำหรับยิง API
+import { UserPlus, UserMinus, CheckCircle2, XCircle, Shield, Eye, Bomb, Sparkles, HelpCircle, Trophy, Ghost, ArrowRight, Smartphone } from 'lucide-react'; // นำเข้าไอคอน
 
 const GangQuizPage = () => {
     // --- State สำหรับตั้งค่าเกม ---
+    // gameState: ควบคุมหน้าจอ ('setup' = ตั้งค่า, 'playing' = ระหว่างเล่น, 'review' = เฉลย, 'endgame' = จบเกม)
     const [gameState, setGameState] = useState('setup'); 
+    // players: เก็บข้อมูลผู้เล่นทุกคน (ชื่อ, คะแนน, สถานะต่างๆ, ไอเทมที่มี)
     const [players, setPlayers] = useState([
         { name: 'พี', score: 0, wrong: 0, shieldSaves: 0, bombHits: 0, items: [] }, 
         { name: 'รสดี', score: 0, wrong: 0, shieldSaves: 0, bombHits: 0, items: [] }
     ]);
+    // maxQuestions: จำนวนข้อที่จะเล่น (default 10)
     const [maxQuestions, setMaxQuestions] = useState(10);
+    // category: หมวดหมู่คำถามที่เลือก
     const [category, setCategory] = useState('ความรู้รอบตัว');
+    // playedQuestions: เก็บรายชื่อคำถามที่เล่นไปแล้ว เพื่อกันไม่ให้ซ้ำ
     const [playedQuestions, setPlayedQuestions] = useState([]);
 
     // --- State สำหรับดำเนินเกม ---
+    // currentQuestionIndex: ข้อปัจจุบันที่เล่นอยู่ (0, 1, 2...)
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    // currentPlayerIndex: ผู้เล่นคนปัจจุบันที่ถึงคิวตอบ (Index ใน array players)
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+    // quiz: เก็บข้อมูลโจทย์คำถามปัจจุบัน
     const [quiz, setQuiz] = useState(null);
+    // roundAnswers: เก็บคำตอบของทุกคนในรอบนั้นๆ (เพื่อเอาไปคิดคะแนนตอนจบข้อ)
     const [roundAnswers, setRoundAnswers] = useState([]); 
+    // loading: สถานะกำลังโหลดโจทย์
     const [loading, setLoading] = useState(false);
     
     // --- State สำหรับระบบสลับคน (Handover) ---
+    // isWaitingHandover: True = จบตาคนปัจจุบันแล้ว รอส่งมือถือให้คนถัดไป
     const [isWaitingHandover, setIsWaitingHandover] = useState(false);
+    // lastChosenIndex: เก็บ index ของช้อยส์ที่เพิ่งกดไป (เพื่อ highlight สี)
     const [lastChosenIndex, setLastChosenIndex] = useState(null);
 
     // --- State สำหรับไอเทมและความช่วยเหลือ ---
+    // itemFeedback: ข้อความแจ้งเตือนผลการใช้ไอเทม (เด้งขึ้นมาแล้วหายไป)
     const [itemFeedback, setItemFeedback] = useState(""); 
+    // selectedItem: ไอเทมที่กำลังเลือกจะใช้ (ยังไม่กดยืนยัน)
     const [selectedItem, setSelectedItem] = useState(null); 
+    // hiddenOptions: เก็บ Index ของช้อยส์ที่จะถูกซ่อน (ผลจากไอเทม Oracle)
     const [hiddenOptions, setHiddenOptions] = useState([]); 
+    // showGoldenHint: True = แสดงเฉลย (ผลจากไอเทม Golden Eye)
     const [showGoldenHint, setShowGoldenHint] = useState(false); 
+    // isShieldActive: True = เปิดใช้โล่ป้องกันในตานี้
     const [isShieldActive, setIsShieldActive] = useState(false); 
+    // targetVictim: ชื่อผู้เล่นที่เป็นเป้าหมายของระเบิด
     const [targetVictim, setTargetVictim] = useState(null); 
 
+    // กำหนด API URL
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:10000' : 'https://lover-app-jjoe.onrender.com';
 
+    // Effect: ตั้งเวลาเคลียร์ข้อความแจ้งเตือน (itemFeedback) อัตโนมัติใน 3 วินาที
     useEffect(() => { 
         if (itemFeedback) { 
             const t = setTimeout(() => setItemFeedback(""), 3000); 
@@ -42,38 +62,45 @@ const GangQuizPage = () => {
         } 
     }, [itemFeedback]);
 
+    // ฟังก์ชันเพิ่มผู้เล่นใหม่
     const addPlayer = () => setPlayers([...players, { name: '', score: 0, wrong: 0, shieldSaves: 0, bombHits: 0, items: [] }]);
+    // ฟังก์ชันลบผู้เล่น
     const removePlayer = (index) => setPlayers(players.filter((_, i) => i !== index));
+    // ฟังก์ชันอัปเดตชื่อผู้เล่น
     const updatePlayerName = (index, val) => {
         const newPlayers = [...players];
         newPlayers[index].name = val;
         setPlayers(newPlayers);
     };
 
+    // ฟังก์ชันเริ่มรอบใหม่ (สุ่มโจทย์)
     const startNewRound = useCallback(async () => {
         setLoading(true);
-        setQuiz(null);
-        setRoundAnswers([]);
-        setCurrentPlayerIndex(0);
-        setHiddenOptions([]);
-        setShowGoldenHint(false);
-        setIsShieldActive(false);
-        setTargetVictim(null);
-        setSelectedItem(null);
-        setIsWaitingHandover(false);
-        setLastChosenIndex(null);
+        setQuiz(null); // เคลียร์โจทย์เก่า
+        setRoundAnswers([]); // เคลียร์คำตอบเก่า
+        setCurrentPlayerIndex(0); // เริ่มที่คนแรก
+        setHiddenOptions([]); // เคลียร์ตัวช่วยตัดช้อย
+        setShowGoldenHint(false); // เคลียร์เฉลย
+        setIsShieldActive(false); // ปิดโล่
+        setTargetVictim(null); // เคลียร์เป้าระเบิด
+        setSelectedItem(null); // ยกเลิกการเลือกไอเทม
+        setIsWaitingHandover(false); // ยกเลิกหน้าส่งเครื่อง
+        setLastChosenIndex(null); // เคลียร์ไฮไลท์ช้อยส์
         try {
+            // สร้าง list คำถามที่เล่นไปแล้วเพื่อส่งไป exclude
             const excludeList = playedQuestions.join(',');
+            // ยิง API สุ่มคำถาม
             const res = await axios.get(`${API_URL}/api/gang-quiz/random?category=${category}&exclude=${encodeURIComponent(excludeList)}`);
             if (res.data) { 
                 setQuiz(res.data); 
-                setPlayedQuestions(prev => [...prev, res.data.question]);
-                setGameState('playing'); 
+                setPlayedQuestions(prev => [...prev, res.data.question]); // เพิ่มคำถามลง list ที่เล่นแล้ว
+                setGameState('playing'); // เปลี่ยนสถานะเป็น playing
             }
-        } catch (err) { console.error(err); setGameState('setup'); }
+        } catch (err) { console.error(err); setGameState('setup'); } // ถ้า error กลับไปหน้า setup
         setLoading(false);
     }, [category, playedQuestions, API_URL]);
 
+    // ฟังก์ชันลบไอเทมออกจาก inventory ผู้เล่น (เมื่อใช้แล้ว)
     const removeItem = useCallback((itemType) => {
         setPlayers(prev => {
             const updated = [...prev];
@@ -86,31 +113,35 @@ const GangQuizPage = () => {
             }
             return updated;
         });
-        setSelectedItem(null);
+        setSelectedItem(null); // ยกเลิกการเลือกหลังใช้
     }, [currentPlayerIndex]);
 
+    // ฟังก์ชันสุ่มแจกไอเทม (เมื่อตอบถูก)
     const giveRandomItem = useCallback((pIdx) => {
         setPlayers(prev => {
             const updated = [...prev];
             const player = updated[pIdx];
-            if (player.items.length >= 4) return prev; 
-            const roll = Math.random() * 100;
+            if (player.items.length >= 4) return prev; // ถ้าไอเทมเต็ม 4 ช่อง ไม่แจกเพิ่ม
+            const roll = Math.random() * 100; // สุ่มตัวเลข 0-100
             let newItem = null;
-            if (roll < 10) newItem = 'golden';
-            else if (roll < 25) newItem = 'bomb';
-            else if (roll < 45) newItem = 'shield';
-            else if (roll < 80) newItem = 'oracle';
+            // กำหนดความน่าจะเป็นของไอเทมแต่ละชนิด
+            if (roll < 10) newItem = 'golden'; // 10%
+            else if (roll < 25) newItem = 'bomb'; // 15%
+            else if (roll < 45) newItem = 'shield'; // 20%
+            else if (roll < 80) newItem = 'oracle'; // 35%
             if (newItem) player.items.push(newItem);
             return updated;
         });
     }, []);
 
+    // ฟังก์ชันจัดการเมื่อผู้เล่นกดตอบ
     const handleAnswer = (optionIndex) => {
-        if (!quiz || loading || isWaitingHandover) return;
+        if (!quiz || loading || isWaitingHandover) return; // ถ้าไม่พร้อม ห้ามกด
         
-        setLastChosenIndex(optionIndex); // แสดงสถานะการเลือกชั่วคราว
+        setLastChosenIndex(optionIndex); // แสดงสถานะว่าเลือกข้อนี้
         const isCorrect = optionIndex === quiz.answer_index;
         
+        // บันทึกผลการตอบของคนนี้
         const currentAnswer = { 
             playerIndex: currentPlayerIndex, 
             isCorrect, 
@@ -122,37 +153,40 @@ const GangQuizPage = () => {
         const updatedRoundAnswers = [...roundAnswers, currentAnswer];
         setRoundAnswers(updatedRoundAnswers);
 
+        // อัปเดตคะแนนและสถานะผู้เล่น
         setPlayers(prev => {
             const updated = [...prev];
             const player = { ...updated[currentPlayerIndex] };
             if (isCorrect) {
                 player.score += 1;
-                giveRandomItem(currentPlayerIndex);
+                giveRandomItem(currentPlayerIndex); // ตอบถูกได้ไอเทม
             } else {
                 player.wrong += 1;
-                if (isShieldActive) player.shieldSaves += 1; 
+                if (isShieldActive) player.shieldSaves += 1; // นับสถิติการใช้โล่
             }
             updated[currentPlayerIndex] = player;
             return updated;
         });
 
-        // ✅ แก้ปัญหา "กรอบเหลือง": ล้าง Focus ทันที
+        // ✅ แก้ปัญหา "กรอบเหลือง" ค้าง: ล้าง Focus ออกจากปุ่ม
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
         window.getSelection()?.removeAllRanges();
 
-        // ✅ เข้าสู่สถานะรอส่งเครื่องให้เพื่อน (Handover)
+        // ✅ หน่วงเวลาเล็กน้อยแล้วเข้าสู่สถานะรอส่งเครื่อง (Handover)
         setTimeout(() => {
             setIsWaitingHandover(true);
-        }, 500); // แสดงสถานะที่เลือกไว้ 0.5 วินาทีแล้วตัดเข้าหน้าส่งเครื่อง
+        }, 500); // 0.5 วินาที
     };
 
+    // ฟังก์ชันเปลี่ยนคนเล่น (กดปุ่ม "ไปต่อ" ในหน้า Handover)
     const nextPlayer = () => {
-        setLastChosenIndex(null);
-        setIsWaitingHandover(false);
+        setLastChosenIndex(null); // ล้างไฮไลท์คำตอบ
+        setIsWaitingHandover(false); // ปิดหน้า Handover
 
         if (currentPlayerIndex < players.length - 1) {
+            // ถ้ายังไม่ครบทุกคน ให้ไปคนถัดไป และรีเซ็ตสถานะไอเทม
             setCurrentPlayerIndex(prev => prev + 1);
             setHiddenOptions([]); 
             setShowGoldenHint(false); 
@@ -160,13 +194,15 @@ const GangQuizPage = () => {
             setTargetVictim(null); 
             setSelectedItem(null);
         } else {
-            // จบรอบ แสดง Review
+            // ถ้าครบทุกคนแล้ว จบรอบ คำนวณผลระเบิด และไปหน้า Review
             setPlayers(currentPlayers => {
                 const finalUpdated = [...currentPlayers];
                 roundAnswers.forEach(ans => {
+                    // เช็คว่าใครโดนระเบิดบ้าง
                     if (ans.bombTarget) {
                         const victimIdx = finalUpdated.findIndex(p => p.name === ans.bombTarget);
                         const victimAns = roundAnswers.find(a => a.playerIndex === victimIdx);
+                        // ถ้าเหยื่อตอบผิดและไม่มีโล่ -> โดนระเบิด
                         if (victimAns && !victimAns.isCorrect && !victimAns.usedShield) {
                             finalUpdated[victimIdx].bombHits += 1; 
                         }
@@ -178,6 +214,7 @@ const GangQuizPage = () => {
         }
     };
 
+    // ข้อมูลรายละเอียดไอเทมแต่ละชนิด
     const getItemInfo = (type) => {
         const info = {
             'shield': { title: 'โล่ศักดิ์สิทธิ์', desc: 'ป้องกันแต้มผิดและระเบิดได้ 100% ในตานี้' },
@@ -189,14 +226,17 @@ const GangQuizPage = () => {
     };
 
     return (
+        // Container หลักของหน้า
         <div className="max-w-md mx-auto p-6 bg-slate-900 min-h-screen text-white font-bold relative overflow-hidden text-sm">
+            {/* Feedback Popup (แจ้งเตือนลอย) */}
             {itemFeedback && <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-slate-900 px-6 py-3 rounded-2xl shadow-2xl z-[100] animate-bounce text-[10px] uppercase font-black">{itemFeedback}</div>}
 
             <h1 className="text-2xl font-black italic text-center mb-8 text-yellow-400 uppercase tracking-tighter">Harry's Roulette Quiz 🍭</h1>
 
-            {/* --- SETUP --- */}
+            {/* --- SETUP PHASE: หน้าตั้งค่าก่อนเริ่มเกม --- */}
             {gameState === 'setup' && (
                 <div className="space-y-6 animate-in fade-in font-black">
+                    {/* ส่วนจัดการผู้เล่น */}
                     <div className="bg-slate-800 p-6 rounded-[2rem] border-2 border-slate-700 shadow-xl text-center">
                         <label className="text-[10px] uppercase text-slate-400 mb-4 block tracking-widest font-black underline decoration-yellow-400">รายชื่อผู้ร่วมชะตากรรม</label>
                         <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -211,6 +251,7 @@ const GangQuizPage = () => {
                         <button onClick={addPlayer} className="w-full mt-4 py-2 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 text-[10px] flex items-center justify-center gap-2 hover:border-yellow-400 transition-all font-black"><UserPlus size={14}/> เพิ่มสมาชิก</button>
                     </div>
 
+                    {/* ส่วนตั้งค่าเกม (จำนวนข้อ, หมวดหมู่) */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-slate-800 p-4 rounded-2xl border-2 border-slate-700 text-center font-black">
                             <label className="text-[9px] uppercase text-slate-400 block mb-2">จำนวนข้อ</label>
@@ -222,6 +263,7 @@ const GangQuizPage = () => {
                             <label className="text-[9px] uppercase text-slate-400 block mb-2 font-black">หมวดหมู่</label>
                             <select value={category} onChange={(e) => setCategory(e.target.value)} className="bg-transparent text-[10px] text-yellow-400 outline-none cursor-pointer font-black">
                                 <option value="ความรู้รอบตัว">🌏 ความรู้รอบตัว</option>
+                                {/* ... ตัวเลือกอื่นๆ ... */}
                                 <option value="วิทยาศาสตร์น่ารู้">🧪 วิทยาศาสตร์</option>
                                 <option value="ประวัติศาสตร์กวนๆ">📜 ประวัติศาสตร์</option>
                                 <option value="บันเทิงและดารา">🎬 บันเทิง/ดารา</option>
@@ -234,30 +276,34 @@ const GangQuizPage = () => {
                             </select>
                         </div>
                     </div>
+                    {/* ปุ่มเริ่มเกม (Reset ค่าต่างๆ ก่อนเริ่ม) */}
                     <button onClick={async () => { setPlayers(players.map(p=>({...p, score:0, wrong:0, shieldSaves:0, bombHits:0}))); setPlayedQuestions([]); setCurrentQuestionIndex(0); await startNewRound(); }} disabled={loading} className="w-full py-5 bg-yellow-400 text-slate-900 rounded-[2rem] font-black uppercase italic shadow-lg active:scale-95 transition-all">เริ่มสงครามลูกอม ✨</button>
                 </div>
             )}
 
-            {/* --- PLAYING --- */}
+            {/* --- PLAYING PHASE: ระหว่างเล่น --- */}
             {gameState === 'playing' && quiz && (
                 <div className="space-y-6 animate-in slide-in-from-right font-black">
-                    {/* ✅ ส่วนการแสดงผลปกติระหว่างเล่น */}
+                    {/* ✅ เงื่อนไข: ถ้าไม่ได้รอส่งเครื่อง (Handover) ให้แสดงหน้าจอเล่นปกติ */}
                     {!isWaitingHandover ? (
                         <>
+                            {/* Header บอกข้อและคิวคนเล่น */}
                             <div className="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border-2 border-slate-700">
                                 <div className="text-[10px] uppercase text-slate-400">ข้อ {currentQuestionIndex + 1}/{maxQuestions}</div>
                                 <div className="text-yellow-400 uppercase italic text-sm tracking-tighter">คิว: {players[currentPlayerIndex].name}</div>
                             </div>
 
+                            {/* กล่องคำถาม */}
                             <div className="p-8 bg-white text-slate-900 rounded-[2.5rem] shadow-2xl relative text-center">
                                 {isShieldActive && <Shield className="absolute -top-3 -right-3 text-green-500 fill-green-500 drop-shadow-lg animate-pulse" size={40}/>}
                                 {targetVictim && <Bomb className="absolute -top-3 -right-3 text-rose-500 animate-pulse drop-shadow-lg" size={40}/>}
                                 <p className="text-lg font-black italic leading-tight uppercase">{quiz.question}</p>
                             </div>
 
+                            {/* ตัวเลือกคำตอบ */}
                             <div className="space-y-3">
                                 {quiz.options.map((opt, i) => (
-                                    !hiddenOptions.includes(i) && (
+                                    !hiddenOptions.includes(i) && ( // ถ้าโดนตัดช้อย จะไม่แสดง
                                         <button key={i} onClick={() => handleAnswer(i)}
                                             className={`w-full p-4 border-2 rounded-2xl text-xs text-left transition-all flex justify-between items-center
                                             ${lastChosenIndex === i ? 'bg-yellow-400 border-yellow-500 text-slate-900' : 'bg-slate-800 border-slate-700 hover:border-yellow-400'}
@@ -269,9 +315,10 @@ const GangQuizPage = () => {
                                 ))}
                             </div>
 
-                            {/* Item Shelf */}
+                            {/* Item Shelf: แสดงไอเทมของผู้เล่น */}
                             {players[currentPlayerIndex].items.length > 0 && !lastChosenIndex && (
                                 <div className="bg-slate-800/80 p-5 rounded-[2rem] border border-white/10 shadow-inner">
+                                    {/* Logic แสดงผลตอนกดใช้ไอเทมต่างๆ (ระเบิด, โล่, ฯลฯ) */}
                                     {selectedItem === 'bomb' && !targetVictim ? (
                                         <div className="text-center animate-in zoom-in">
                                             <p className="text-[11px] text-rose-400 uppercase mb-3 underline">เลือกเป้าหมายระเบิด!</p>
@@ -292,6 +339,7 @@ const GangQuizPage = () => {
                                             <div className="flex gap-2 justify-center">
                                                 <button onClick={() => setSelectedItem(null)} className="px-4 py-1.5 bg-slate-700 rounded-lg text-[9px] uppercase">ยกเลิก</button>
                                                 <button onClick={() => {
+                                                    // Logic การทำงานของไอเทมแต่ละชนิด
                                                     if(selectedItem === 'oracle') { 
                                                         let wrongIndices = [];
                                                         quiz.options.forEach((_, i) => { if (i !== quiz.answer_index) wrongIndices.push(i); });
@@ -319,7 +367,7 @@ const GangQuizPage = () => {
                             )}
                         </>
                     ) : (
-                        /* ✅ [จุดแก้ไขที่ 2] หน้าจอส่งต่อเครื่อง (Handover Screen) เพื่อล้างรอยนิ้วมือ */
+                        /* ✅ หน้าจอส่งต่อเครื่อง (Handover Screen) */
                         <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-8 animate-in zoom-in font-black text-center">
                             <div className="p-10 bg-slate-800 border-4 border-yellow-400 rounded-[3rem] shadow-2xl relative">
                                 <Smartphone size={80} className="text-yellow-400 mx-auto mb-6 animate-bounce" />
@@ -336,7 +384,7 @@ const GangQuizPage = () => {
                 </div>
             )}
 
-            {/* --- REVIEW --- */}
+            {/* --- REVIEW PHASE: เฉลยคำตอบหลังจบรอบ --- */}
             {gameState === 'review' && quiz && (
                 <div className="space-y-5 animate-in zoom-in font-black">
                     <h2 className="text-xl font-black text-center text-yellow-400 italic uppercase underline decoration-rose-500">ผลตัดสินรอบนี้! 🍭</h2>
@@ -370,18 +418,20 @@ const GangQuizPage = () => {
                             );
                         })}
                     </div>
+                    {/* ปุ่มไปต่อ: ถ้ายังไม่ครบจำนวนข้อ ให้เริ่มรอบใหม่ ถ้าครบแล้วไป Endgame */}
                     <button onClick={async () => { if(currentQuestionIndex < maxQuestions - 1) { setCurrentQuestionIndex(prev => prev + 1); await startNewRound(); } else { setGameState('endgame'); } }}
                         className="w-full py-4 bg-yellow-400 text-slate-900 rounded-2xl font-black uppercase italic shadow-xl active:scale-95">ไปต่อ ↻</button>
                 </div>
             )}
 
-            {/* --- ENDGAME --- */}
+            {/* --- ENDGAME PHASE: จบเกม สรุปผล --- */}
             {gameState === 'endgame' && (
                 <div className="space-y-6 text-center animate-in bounce-in font-black">
                     <h2 className="text-3xl font-black text-yellow-400 italic uppercase tracking-widest">ใครซวยที่สุด?</h2>
                     <div className="bg-slate-800 rounded-[2.5rem] p-6 border-2 border-slate-700 shadow-xl font-black">
+                        {/* เรียงลำดับตามคะแนน */}
                         {players.sort((a,b) => a.score - b.score).map((p, i, sorted) => {
-                            const isWorst = p.score === sorted[0].score;
+                            const isWorst = p.score === sorted[0].score; // คนที่คะแนนน้อยสุด
                             return (
                                 <div key={i} className="py-4 border-b border-slate-700 last:border-0 px-4">
                                     <div className="flex justify-between items-center mb-3">
@@ -405,6 +455,7 @@ const GangQuizPage = () => {
                             );
                         })}
                     </div>
+                    {/* ปุ่มเริ่มใหม่ (Reload Page) */}
                     <button onClick={() => window.location.reload()} className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black uppercase italic shadow-xl shadow-rose-500/20 active:scale-95">เริ่มวงใหม่ ↻</button>
                 </div>
             )}
